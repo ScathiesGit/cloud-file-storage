@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: ./db/changelog/v.1.0.0/31.01.2024.create-db.sql
+  - include:
+      file: ./db/changelog/v.1.0.0/31.01.2024.create-table-users.sql
