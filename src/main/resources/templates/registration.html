@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Sign up</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <style>
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #000000;
+        }
+    </style>
+</head>
+<body>
+<div class="container p-3 mb-2 bg-info-subtle text-info-emphasis">
+    <div class="row">
+        <div class="col-md-6 offset-md-3 d-flex justify-content-center">
+            <form class="form-sign-up" method="POST" action="/registration">
+                <h3 class="form-sign-up text-dark">Please sign up</h3>
+                <div class="text-sm-start text-danger" style="max-width: 200px"  th:if="${reason}">
+                    <span th:text="${reason}">password: пароль должен содержать минимум 5 символов</span>
+                </div>
+                <div class="input-group mb-2">
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Username" required autofocus>
+                </div>
+                <div class="input-group mb-2">
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+                </div>
+                <div class="input-group mb-2">
+                    <button type="submit" class="btn btn-outline-dark">Sign up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script crossorigin="anonymous" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
