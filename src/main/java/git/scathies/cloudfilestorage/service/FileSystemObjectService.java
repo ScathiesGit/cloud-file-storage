@@ -1,12 +1,14 @@
 package git.scathies.cloudfilestorage.service;
 
+import java.io.InputStream;
+
 public interface FileSystemObjectService {
 
-    void createFile(String path, String filename, String contentType);
+    void createFile(String path, String contentType, InputStream inputStream);
 
     void renameFile(String path, String oldName, String newName);
 
-    void moveFile(String destinationPath, String sourcePath);
+    void moveFile(String sourcePath, String destinationPath);
 
     void removeFile(String fullPath);
 
