@@ -21,12 +21,12 @@ public class FileSystemObjectServiceImpl implements FileSystemObjectService {
     }
 
     public void renameFile(String path, String oldName, String newName) {
-        fileSystemObjectRepository.update(path + newName, path + oldName);
+        fileSystemObjectRepository.update(path + oldName, path + newName);
     }
 
-    public void moveFile(String sourcePath, String destinationPath) {
-        fileSystemObjectRepository.update(sourcePath, destinationPath);
-    }
+//    public void moveFile(String sourcePath, String destinationPath) {
+//        fileSystemObjectRepository.update(sourcePath, destinationPath);
+//    }
 
     public void removeFile(String path) {
         fileSystemObjectRepository.delete(path);
@@ -38,7 +38,7 @@ public class FileSystemObjectServiceImpl implements FileSystemObjectService {
     }
 
     public void renameFolder(String path, String name) {
-        var newPrefix = path.substring(0, path.lastIndexOf("/", path.length() - 2) + 1) + name;
+        var newPrefix = path.substring(0, path.lastIndexOf("/", path.length() - 2) + 1) + name + "/";
         var objectsFileSystem = fileSystemObjectRepository.findAllByPrefix(path);
         Map<String, String> oldPathToNewPath = new HashMap<>();
         try {

@@ -8,7 +8,7 @@ public interface FileSystemObjectService {
 
     void renameFile(String path, String oldName, String newName);
 
-    void moveFile(String sourcePath, String destinationPath);
+//    void moveFile(String sourcePath, String destinationPath);
 
     void removeFile(String fullPath);
 

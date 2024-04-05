@@ -14,16 +14,18 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+@Testcontainers
 @SpringBootTest
 @ActiveProfiles("test")
 public class UserServiceTest {
 
-    private static final MySQLContainer<?> MY_SQL_CONTAINER = new MySQLContainer<>("mysql:8.3.0");
+    private static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.3.0");
 
     @Autowired
     private UserRepository userRepository;
@@ -38,12 +40,12 @@ public class UserServiceTest {
 
     @BeforeAll
     static void runDatabase() {
-        MY_SQL_CONTAINER.start();
+        MYSQL_CONTAINER.start();
     }
 
     @DynamicPropertySource
     static void addProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", MY_SQL_CONTAINER::getJdbcUrl);
+        registry.add("spring.datasource.url", MYSQL_CONTAINER::getJdbcUrl);
     }
 
     @BeforeEach

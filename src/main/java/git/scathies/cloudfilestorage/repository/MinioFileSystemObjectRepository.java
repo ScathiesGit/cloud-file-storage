@@ -61,39 +61,33 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     }
 
     @Override
-    public void updateAll(Map<String, String> oldPathToNewPath) {
-        oldPathToNewPath.forEach((oldPath, newPath) -> {
-                    if (newPath.endsWith("/")) {
-                        save(newPath, "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
-                    } else {
-                        copy(newPath, oldPath);
-                    }
-                    delete(oldPath);
-                }
-        );
+    public void updateAll(Map<String, String> newPathByOldPath) {
+        var sortedDescKey = sortDescending(newPathByOldPath.keySet().stream().toList());
+        for (String path : sortedDescKey) {
+            var newPath = newPathByOldPath.get(path);
+            if (newPath.endsWith("/")) {
+                save(newPath, "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
+            } else {
+                copy(path, newPath);
+            }
+        }
+        deleteAll(sortedDescKey);
     }
 
     @Override
     public void delete(String path) {
         removeObject(path);
-        path = path.endsWith("/")
-                ? path.substring(0, path.lastIndexOf("/", path.length() - 2) + 1)
-                : path.substring(0, path.lastIndexOf("/") + 1);
-        save(path, "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
+        restoreParent(path);
     }
 
     @Override
     public void deleteAll(List<String> paths) {
-        paths.stream()
-                .map(path -> path.replace("/", "/ ").split("/"))
-                .sorted((o1, o2) -> o2.length - o1.length)
-                .map(array -> String.join("", array))
-                .map(path -> path.replace(" ", "/"))
-                .toList()
-                .forEach(this::delete);
+        var sortedPaths = sortDescending(paths);
+        sortedPaths.forEach(this::removeObject);
+        restoreParent(sortedPaths.get(paths.size() - 1));
     }
 
-    private void copy(String destinationPath, String sourcePath) {
+    private void copy(String sourcePath, String destinationPath) {
         try {
             minioClient.copyObject(CopyObjectArgs.builder()
                     .bucket(bucketName)
@@ -117,5 +111,21 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void restoreParent(String path) {
+        path = path.endsWith("/")
+                ? path.substring(0, path.lastIndexOf("/", path.length() - 2) + 1)
+                : path.substring(0, path.lastIndexOf("/") + 1);
+        save(path, "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
+    }
+
+    private List<String> sortDescending(List<String> paths) {
+        return paths.stream()
+                .map(path -> path.replace("/", "/ ").split("/"))
+                .sorted((o1, o2) -> o2.length - o1.length)
+                .map(array -> String.join("", array))
+                .map(path -> path.replace(" ", "/"))
+                .toList();
     }
 }
