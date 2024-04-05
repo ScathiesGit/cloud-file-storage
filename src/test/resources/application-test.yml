@@ -1,14 +1,11 @@
 spring:
-  data:
-
-
+  datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: test
     password: test
+#    url:
 
 minio:
   username: minioadmin
   password: minioadmin
-  endpoint:
-  port: 9000
   bucket-name: test

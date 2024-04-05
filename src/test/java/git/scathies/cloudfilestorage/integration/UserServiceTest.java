@@ -20,12 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-@Testcontainers
-@SpringBootTest
-@ActiveProfiles("test")
-public class UserServiceTest {
+public class UserServiceTest extends BaseIntegrationTest {
 
-    private static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.3.0");
+//    private static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.3.0");
 
     @Autowired
     private UserRepository userRepository;
@@ -38,15 +35,15 @@ public class UserServiceTest {
             .password("test_valid_pass")
             .build();
 
-    @BeforeAll
-    static void runDatabase() {
-        MYSQL_CONTAINER.start();
-    }
-
-    @DynamicPropertySource
-    static void addProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", MYSQL_CONTAINER::getJdbcUrl);
-    }
+//    @BeforeAll
+//    static void runDatabase() {
+//        MYSQL_CONTAINER.start();
+//    }
+//
+//    @DynamicPropertySource
+//    static void addProperties(DynamicPropertyRegistry registry) {
+//        registry.add("spring.datasource.url", MYSQL_CONTAINER::getJdbcUrl);
+//    }
 
     @BeforeEach
     void cleanDatabase() {

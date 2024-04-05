@@ -117,7 +117,9 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         path = path.endsWith("/")
                 ? path.substring(0, path.lastIndexOf("/", path.length() - 2) + 1)
                 : path.substring(0, path.lastIndexOf("/") + 1);
-        save(path, "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
+        if (!path.isEmpty()) {
+            save(path, "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
+        }
     }
 
     private List<String> sortDescending(List<String> paths) {

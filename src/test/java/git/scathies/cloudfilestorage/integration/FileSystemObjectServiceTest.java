@@ -8,19 +8,10 @@ import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.errors.ErrorResponseException;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MinIOContainer;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -30,11 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-@Testcontainers
-@SpringBootTest(properties = "spring.liquibase.enabled=false")
-@ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-public class FileSystemObjectServiceTest {
+public class FileSystemObjectServiceTest extends BaseIntegrationTest {
 
     @Autowired
     private FileSystemObjectService fileSystemObjectService;
@@ -47,20 +34,6 @@ public class FileSystemObjectServiceTest {
 
     @Value("${minio.bucket-name}")
     private String bucketName;
-
-    private static final MinIOContainer MINIO_CONTAINER = new MinIOContainer(DockerImageName.parse(
-            "minio/minio:latest").asCompatibleSubstituteFor("minio/minio"));
-
-    @BeforeAll
-    static void startMinioServer() {
-        MINIO_CONTAINER.start();
-    }
-
-    @DynamicPropertySource
-    static void addProperties(DynamicPropertyRegistry registry) {
-        registry.add("minio.endpoint", MINIO_CONTAINER::getS3URL);
-
-    }
 
     @BeforeEach
     @SneakyThrows
@@ -189,8 +162,6 @@ public class FileSystemObjectServiceTest {
         for (var rawNewItem : rawNewItems) {
             newPaths.add(rawNewItem.get().objectName());
         }
-        System.out.println("--");
-        System.out.println(newPaths);
         assertAll(
                 () -> assertThat(oldPaths).hasSize(0),
                 () -> assertThat(newPaths).hasSize(expectedNumberUpdatedObjects)
