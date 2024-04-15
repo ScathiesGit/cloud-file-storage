@@ -22,8 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 public class UserServiceTest extends BaseIntegrationTest {
 
-//    private static final MySQLContainer<?> MYSQL_CONTAINER = new MySQLContainer<>("mysql:8.3.0");
-
     @Autowired
     private UserRepository userRepository;
 
@@ -34,16 +32,6 @@ public class UserServiceTest extends BaseIntegrationTest {
             .username("test_valid_username")
             .password("test_valid_pass")
             .build();
-
-//    @BeforeAll
-//    static void runDatabase() {
-//        MYSQL_CONTAINER.start();
-//    }
-//
-//    @DynamicPropertySource
-//    static void addProperties(DynamicPropertyRegistry registry) {
-//        registry.add("spring.datasource.url", MYSQL_CONTAINER::getJdbcUrl);
-//    }
 
     @BeforeEach
     void cleanDatabase() {

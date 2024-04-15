@@ -7,6 +7,7 @@ import io.minio.GetObjectArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
 import io.minio.errors.ErrorResponseException;
+import io.minio.messages.Item;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,11 +45,11 @@ public class FileSystemObjectServiceTest extends BaseIntegrationTest {
                     .build());
         }
 
-        List<String> paths = new ArrayList<>();
-        var rawObjs = fileSystemObjectRepository.findAllByPrefix("");
-        for (var rawObj : rawObjs) {
-            paths.add(rawObj.get().objectName());
-        }
+        List<String> paths = fileSystemObjectRepository.findAllByPrefix("")
+                .stream()
+                .map(Item::objectName)
+                .toList();
+
         if (!paths.isEmpty()) {
             fileSystemObjectRepository.deleteAll(paths);
         }
@@ -109,11 +110,10 @@ public class FileSystemObjectServiceTest extends BaseIntegrationTest {
 
         fileSystemObjectService.removeFile(path);
 
-        List<String> pathsToResources = new ArrayList<>();
-        var resources = fileSystemObjectRepository.findAllByPrefix("");
-        for (var resource : resources) {
-            pathsToResources.add(resource.get().objectName());
-        }
+        List<String> pathsToResources = fileSystemObjectRepository.findAllByPrefix("")
+                .stream()
+                .map(Item::objectName)
+                .toList();
         assertThat(pathsToResources).doesNotContain(path);
     }
 
@@ -124,11 +124,10 @@ public class FileSystemObjectServiceTest extends BaseIntegrationTest {
 
         fileSystemObjectService.createFolder(path);
 
-        List<String> paths = new ArrayList<>();
-        var rawItems = fileSystemObjectRepository.findAllByPrefix(path);
-        for (var rawItem : rawItems) {
-            paths.add(rawItem.get().objectName());
-        }
+        List<String> paths = fileSystemObjectRepository.findAllByPrefix(path)
+                .stream()
+                .map(Item::objectName)
+                .toList();
         assertThat(paths).contains(path).hasSize(1);
     }
 
@@ -148,20 +147,18 @@ public class FileSystemObjectServiceTest extends BaseIntegrationTest {
         fileSystemObjectService.createFolder(parent);
         fileSystemObjectService.createFolder(folderChild1);
         fileSystemObjectService.createFolder(folderChild2);
-        fileSystemObjectService.createFile(fileChild1, "plain/text", new ByteArrayInputStream(new byte[] {}));
+        fileSystemObjectService.createFile(fileChild1, "plain/text", new ByteArrayInputStream(new byte[]{}));
 
         fileSystemObjectService.renameFolder(parent, newName);
 
-        List<String> oldPaths = new ArrayList<>();
-        var rawOldItems = fileSystemObjectRepository.findAllByPrefix(parent);
-        for (var rawOldItem : rawOldItems) {
-            oldPaths.add(rawOldItem.get().objectName());
-        }
-        List<String> newPaths = new ArrayList<>();
-        var rawNewItems = fileSystemObjectRepository.findAllByPrefix(newParent);
-        for (var rawNewItem : rawNewItems) {
-            newPaths.add(rawNewItem.get().objectName());
-        }
+        List<String> oldPaths = fileSystemObjectRepository.findAllByPrefix(parent)
+                .stream()
+                .map(Item::objectName)
+                .toList();
+        List<String> newPaths = fileSystemObjectRepository.findAllByPrefix(newParent)
+                .stream()
+                .map(Item::objectName)
+                .toList();
         assertAll(
                 () -> assertThat(oldPaths).hasSize(0),
                 () -> assertThat(newPaths).hasSize(expectedNumberUpdatedObjects)
@@ -179,20 +176,18 @@ public class FileSystemObjectServiceTest extends BaseIntegrationTest {
         fileSystemObjectService.createFolder(parent);
         fileSystemObjectService.createFolder(folderChild1);
         fileSystemObjectService.createFolder(folderChild2);
-        fileSystemObjectService.createFile(fileChild1, "plain/text", new ByteArrayInputStream(new byte[] {}));
+        fileSystemObjectService.createFile(fileChild1, "plain/text", new ByteArrayInputStream(new byte[]{}));
 
         fileSystemObjectService.removeFolder(parent);
 
-        List<String> paths = new ArrayList<>();
-        var rawItems = fileSystemObjectRepository.findAllByPrefix(parent);
-        for (var rawItem : rawItems) {
-            paths.add(rawItem.get().objectName());
-        }
-        List<String> allPaths = new ArrayList<>();
-        var rawAllItems = fileSystemObjectRepository.findAllByPrefix("");
-        for (var rawItem : rawAllItems) {
-            allPaths.add(rawItem.get().objectName());
-        }
+        List<String> paths = fileSystemObjectRepository.findAllByPrefix(parent)
+                .stream()
+                .map(Item::objectName)
+                .toList();
+        List<String> allPaths = fileSystemObjectRepository.findAllByPrefix("")
+                .stream()
+                .map(Item::objectName)
+                .toList();
         assertAll(
                 () -> assertThat(paths).hasSize(0),
                 () -> assertThat(allPaths).hasSize(1)
