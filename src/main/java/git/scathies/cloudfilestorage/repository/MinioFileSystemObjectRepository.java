@@ -1,13 +1,21 @@
 package git.scathies.cloudfilestorage.repository;
 
 import io.minio.*;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import org.apache.catalina.core.ApplicationPart;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -46,12 +54,13 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     }
 
     @Override
-    public Iterable<Result<Item>> findAllByPrefix(String prefix) {
-        return minioClient.listObjects(ListObjectsArgs.builder()
-                .bucket(bucketName)
-                .recursive(true)
-                .prefix(prefix)
-                .build());
+    public List<Item> findAllByPrefix(String prefix) {
+        return find(prefix, true);
+    }
+
+    @Override
+    public List<Item> findAllInFirstLevel(String path) {
+        return find(path, false);
     }
 
     @Override
@@ -62,16 +71,14 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
 
     @Override
     public void updateAll(Map<String, String> newPathByOldPath) {
-        var sortedDescKey = sortDescending(newPathByOldPath.keySet().stream().toList());
-        for (String path : sortedDescKey) {
-            var newPath = newPathByOldPath.get(path);
-            if (newPath.endsWith("/")) {
-                save(newPath, "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
+        for (Map.Entry<String, String> entry : newPathByOldPath.entrySet()) {
+            if (entry.getKey().endsWith("/")) {
+                save(entry.getValue(), "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
             } else {
-                copy(path, newPath);
+                copy(entry.getKey(), entry.getValue());
             }
         }
-        deleteAll(sortedDescKey);
+        deleteAll(newPathByOldPath.keySet().stream().toList());
     }
 
     @Override
@@ -82,9 +89,75 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
 
     @Override
     public void deleteAll(List<String> paths) {
-        var sortedPaths = sortDescending(paths);
-        sortedPaths.forEach(this::removeObject);
-        restoreParent(sortedPaths.get(paths.size() - 1));
+        List<DeleteObject> deleteObjects = new ArrayList<>();
+        paths.forEach(path -> deleteObjects.add(new DeleteObject(path)));
+        minioClient.removeObjects(RemoveObjectsArgs.builder()
+                .bucket(bucketName)
+                .objects(deleteObjects)
+                .build())
+                .forEach(lazyRemoval -> {
+                    try {
+                        lazyRemoval.get();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+    }
+
+    @Override
+    public GetObjectResponse download(String path) {
+        try {
+            return minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(path)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void downloadAll(String path) {
+
+    }
+
+    @Override
+    public void upload(String basePath, List<MultipartFile> files) {
+        if (files.size() > 1) {
+            List<SnowballObject> uploadObjects = new ArrayList<>();
+            files.forEach(file -> {
+                try {
+                    uploadObjects.add(new SnowballObject(
+                            basePath + file.getOriginalFilename(),
+                            file.getInputStream(),
+                            file.getInputStream().available(),
+                            null));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            try {
+                minioClient.uploadSnowballObjects(UploadSnowballObjectsArgs.builder()
+                        .bucket(bucketName)
+                        .objects(uploadObjects)
+                        .build());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            try {
+                var file = files.get(0);
+                minioClient.putObject(PutObjectArgs.builder()
+                        .bucket(bucketName)
+                        .contentType(file.getContentType())
+                        .object(basePath + file.getOriginalFilename())
+                        .stream(file.getInputStream(), file.getInputStream().available(), -1)
+                        .build());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private void copy(String sourcePath, String destinationPath) {
@@ -111,6 +184,25 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<Item> find(String prefix, boolean isRecursive) {
+        var rawItems = minioClient.listObjects(ListObjectsArgs.builder()
+                .bucket(bucketName)
+                .prefix(prefix)
+                .recursive(isRecursive)
+                .build());
+
+        List<Item> items = new ArrayList<>();
+        try {
+            for (var rawItem : rawItems) {
+                items.add(rawItem.get());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return items;
     }
 
     private void restoreParent(String path) {
