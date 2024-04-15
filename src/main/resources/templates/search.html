@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+</head>
+<body>
+
+<div class="container-fluid" th:insert="~{fragment/header-fragment.html :: header}">
+</div>
+
+<div class="container">
+    <div class="row row-cols-1">
+
+        <div class="row row-cols-6">
+            <table class="table">
+                <thead>
+                <tr>
+<!--                    <th scope="col">тип</th>-->
+                    <th scope="col">имя</th>
+                    <th scope="col">перейти в папку</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="name : ${found}">
+<!--                    <th scope="row" th:text="${name.endsWith('/') ? папка : файл}"></th>-->
+                    <th scope="row" th:text="${name.isEmpty() ? '/' : name}">
+                    </th>
+                    <th scope="row">
+                        <form action="/" method="get">
+                            <input type="hidden" name="path" th:value="${name}">
+                            <button type="submit">+</button>
+                        </form>
+                    </th>
+<!--                    <th scope="row" th:if="${name.endsWith('/')}">-->
+<!--                        <form action="/" method="get">-->
+<!--                            <input type="hidden" name="path"-->
+<!--                                   th:value="${name.substring(0, name.lastIndexOf('/', name.length() - 2) + 1)}">-->
+<!--                            <button type="submit">+</button>-->
+<!--                        </form>-->
+<!--                    </th>-->
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+</body>
+</html>
