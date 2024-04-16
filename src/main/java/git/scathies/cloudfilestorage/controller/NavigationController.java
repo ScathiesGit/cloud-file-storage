@@ -23,9 +23,9 @@ public class NavigationController {
                            @SessionAttribute User user,
                            Model model) {
         if (user != null) {
-            var rootFolder = "user-%s-files/".formatted(user.getId());
-            String fullPath = path != null ? rootFolder + path : rootFolder;
-            model.addAttribute("content", searchFileSystemObjectService.getContentFolder(fullPath));
+            model.addAttribute("content", path == null
+                    ? searchFileSystemObjectService.getRootFolderContent(user.getId())
+                    : searchFileSystemObjectService.getFolderContent(path, user.getId()));
             if (path != null) {
                 model.addAttribute("path", path);
                 model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path));
@@ -42,7 +42,7 @@ public class NavigationController {
         var rootFolder = "user-%s-files/".formatted(user.getId());
         String fullPath = path != null ? rootFolder + path : rootFolder;
         fileSystemObjectService.createFolder(fullPath + name + "/");
-        model.addAttribute("content", searchFileSystemObjectService.getContentFolder(fullPath));
+        model.addAttribute("content", searchFileSystemObjectService.getFolderContent(fullPath, user.getId()));
         if (path != null) {
             model.addAttribute("path", path);
             model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path));

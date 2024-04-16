@@ -1,5 +1,6 @@
 package git.scathies.cloudfilestorage.repository;
 
+import git.scathies.cloudfilestorage.model.FileSystemObject;
 import io.minio.GetObjectResponse;
 import io.minio.messages.Item;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,9 +13,11 @@ public interface FileSystemObjectRepository {
     
     void save(String path, String contentType, InputStream inputStream);
 
-    List<Item> findAllByPrefix(String prefix);
+    List<FileSystemObject> findAllByPrefix(String prefix);
 
-    List<Item> findAllInFirstLevel(String path);
+    List<FileSystemObject> findAllInRootFolder(Long userId);
+
+    List<FileSystemObject> findAllInFirstLevel(String path, Long userId);
 
     void update(String oldPath, String newPath);
 

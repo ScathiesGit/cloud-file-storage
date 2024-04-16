@@ -26,7 +26,7 @@ public class UploadController {
     public String upload(@SessionAttribute User user, List<MultipartFile> files, String path, Model model, HttpServletRequest req ) {
         var basePath = "user-%s-files/%s".formatted(user.getId(), path != null ? path : "");
         fileSystemObjectService.upload(basePath, files);
-        model.addAttribute("content", searchFileSystemObjectService.getContentFolder(basePath));
+        model.addAttribute("content", searchFileSystemObjectService.getFolderContent(basePath, user.getId()));
         model.addAttribute("path", path);
         model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path != null ? path : ""));
         return "test";

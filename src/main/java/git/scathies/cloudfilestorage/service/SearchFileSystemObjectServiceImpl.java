@@ -1,5 +1,6 @@
 package git.scathies.cloudfilestorage.service;
 
+import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.repository.FileSystemObjectRepository;
 import git.scathies.cloudfilestorage.util.PathUtil;
 import io.minio.messages.Item;
@@ -15,10 +16,18 @@ public class SearchFileSystemObjectServiceImpl implements SearchFileSystemObject
     private final FileSystemObjectRepository fileSystemObjectRepository;
 
     @Override
-    public List<String> getContentFolder(String path) {
-        return fileSystemObjectRepository.findAllInFirstLevel(path)
+    public List<String> getRootFolderContent(Long userId) {
+        return fileSystemObjectRepository.findAllInRootFolder(userId)
                 .stream()
-                .map(Item::objectName)
+                .map(FileSystemObject::getName)
+                .toList();
+    }
+
+    @Override
+    public List<String> getFolderContent(String path, Long userId) {
+        return fileSystemObjectRepository.findAllInFirstLevel(path, userId)
+                .stream()
+                .map(FileSystemObject::getName)
                 .map(objName -> objName.replaceFirst(path, ""))
                 .toList();
     }
@@ -26,7 +35,7 @@ public class SearchFileSystemObjectServiceImpl implements SearchFileSystemObject
     @Override
     public List<String> search(String name, String rootFolder) {
         return fileSystemObjectRepository.findAllByPrefix(rootFolder).stream()
-                .map(Item::objectName)
+                .map(FileSystemObject::getName)
                 .filter(path -> PathUtil.isContains(path, name))
                 .flatMap(path -> PathUtil.getPathsTo(path, name).stream())
                 .map(path -> path.replace(rootFolder, ""))

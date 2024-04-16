@@ -32,8 +32,8 @@ public class ChangeNameController {
         }
         Path parent = Paths.get(path).getParent();
         String path1 = parent != null ? parent.toString().replace("\\", "/") + "/" : "";
-        model.addAttribute("content", searchFileSystemObjectService.getContentFolder(
-                rootFolder + path1
+        model.addAttribute("content", searchFileSystemObjectService.getFolderContent(
+                rootFolder + path1, user.getId()
         ));
         model.addAttribute("path", path1);
         model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path1));

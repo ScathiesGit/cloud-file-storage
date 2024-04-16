@@ -4,7 +4,9 @@ import java.util.List;
 
 public interface SearchFileSystemObjectService {
 
-    List<String> getContentFolder(String path);
+    List<String> getRootFolderContent(Long userId);
+
+    List<String> getFolderContent(String path, Long userId);
 
     List<String> search(String name, String rootFolder);
 }

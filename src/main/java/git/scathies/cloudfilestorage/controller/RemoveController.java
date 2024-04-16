@@ -36,7 +36,7 @@ public class RemoveController {
 
         String parentFolder = Paths.get(fullPath).getParent() + "/";
         parentFolder = parentFolder.replace("\\", "/");
-        model.addAttribute("content", searchFileSystemObjectService.getContentFolder(parentFolder));
+        model.addAttribute("content", searchFileSystemObjectService.getFolderContent(parentFolder, user.getId()));
         model.addAttribute("breadcrumb",
                 BreadcrumbUtil.createBreadcrumbs(parentFolder.replace("user-" + user.getId() + "-files/","")));
         model.addAttribute("path", parentFolder.replace("user-" + user.getId() + "-files/",""));

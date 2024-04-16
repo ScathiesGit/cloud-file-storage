@@ -1,12 +1,10 @@
 package git.scathies.cloudfilestorage.repository;
 
+import git.scathies.cloudfilestorage.model.FileSystemObject;
 import io.minio.*;
-import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import org.apache.catalina.core.ApplicationPart;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,16 +25,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     @Value("${minio.bucket-name}")
     private final String bucketName;
 
-    // создание файла? добавление нового пути
-    // переименование файла? изменение пути (меняется последний элемент пути - имя)
-    // перемещение файла в другую папку? изменение пути (средний элемент, какая-то папка)
-    // удаление файла? удаление пути
-
-    // создание папки? добавление нового пути
-    // переименование папки? групповое изменение родительского пути и всех дочерних
-    //      родительский путь - сама папка, дочерние - все вложенные эл-ты папки
-    // перемещение папки? то же самое что и переименование
-    // удаление папки? групповое удаление
+    private final String rootFolderTemplate = "user-%s-files/";
 
     @Override
     public void save(String path, String contentType, InputStream inputStream) {
@@ -54,13 +42,18 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     }
 
     @Override
-    public List<Item> findAllByPrefix(String prefix) {
+    public List<FileSystemObject> findAllByPrefix(String prefix) {
         return find(prefix, true);
     }
 
     @Override
-    public List<Item> findAllInFirstLevel(String path) {
-        return find(path, false);
+    public List<FileSystemObject> findAllInRootFolder(Long userId) {
+        return find(rootFolderTemplate.formatted(userId), false);
+    }
+
+    @Override
+    public List<FileSystemObject> findAllInFirstLevel(String path, Long userId) {
+        return find(rootFolderTemplate.formatted(userId) + path, false);
     }
 
     @Override
@@ -92,9 +85,9 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         List<DeleteObject> deleteObjects = new ArrayList<>();
         paths.forEach(path -> deleteObjects.add(new DeleteObject(path)));
         minioClient.removeObjects(RemoveObjectsArgs.builder()
-                .bucket(bucketName)
-                .objects(deleteObjects)
-                .build())
+                        .bucket(bucketName)
+                        .objects(deleteObjects)
+                        .build())
                 .forEach(lazyRemoval -> {
                     try {
                         lazyRemoval.get();
@@ -186,7 +179,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         }
     }
 
-    private List<Item> find(String prefix, boolean isRecursive) {
+    private List<FileSystemObject> find(String prefix, boolean isRecursive) {
         var rawItems = minioClient.listObjects(ListObjectsArgs.builder()
                 .bucket(bucketName)
                 .prefix(prefix)
@@ -202,7 +195,9 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
             throw new RuntimeException(e);
         }
 
-        return items;
+        return items.stream()
+                .map(this::toFileSystemObject)
+                .toList();
     }
 
     private void restoreParent(String path) {
@@ -221,5 +216,14 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                 .map(array -> String.join("", array))
                 .map(path -> path.replace(" ", "/"))
                 .toList();
+    }
+
+    private FileSystemObject toFileSystemObject(Item item) {
+        return FileSystemObject.builder()
+                .name(item.objectName())
+                .userMetadata(item.userMetadata())
+                .lastModified(item.lastModified())
+                .size(item.size())
+                .build();
     }
 }
