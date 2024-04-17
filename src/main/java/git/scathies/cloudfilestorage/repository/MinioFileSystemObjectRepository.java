@@ -3,6 +3,7 @@ package git.scathies.cloudfilestorage.repository;
 import git.scathies.cloudfilestorage.model.DownloadObject;
 import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.model.User;
+import git.scathies.cloudfilestorage.util.PathUtil;
 import io.minio.*;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
@@ -15,11 +16,14 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 @Repository
 @RequiredArgsConstructor
@@ -33,14 +37,22 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     @Value("${file-storage.root-folder-template")
     private final String rootFolderTemplate;
 
+    private final String folderContentType = "octet/binary-stream";
+
     @Override
-    public void save(String path, String contentType, InputStream inputStream) {
+    public void saveFile(String path, String contentType, InputStream inputStream) {
         putObject(path, contentType, inputStream);
     }
 
     @Override
-    public void createRootFolder(User user) {
-        putObject(rootFolderTemplate.formatted(user.getId()), "octet/binary-stream",
+    public void saveFolder(User user, String path, String name) {
+        putObject(rootFolderTemplate.formatted(user.getId()) + path, folderContentType,
+                new ByteArrayInputStream(new byte[]{}));
+    }
+
+    @Override
+    public void saveRootFolder(User user) {
+        putObject(rootFolderTemplate.formatted(user.getId()), folderContentType,
                 new ByteArrayInputStream(new byte[]{}));
     }
 
@@ -50,59 +62,77 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     }
 
     @Override
-    public List<FileSystemObject> findAllInRootFolder(Long userId) {
-        return find(rootFolderTemplate.formatted(userId), false);
+    public List<FileSystemObject> findAllInRootFolder(User user) {
+        return find(rootFolderTemplate.formatted(user), false);
     }
 
     @Override
-    public List<FileSystemObject> findAllInFirstLevel(String path, Long userId) {
-        return find(rootFolderTemplate.formatted(userId) + path, false);
+    public List<FileSystemObject> findAllInFirstLevel(User user, String path) {
+        return find(rootFolderTemplate.formatted(user) + path, false);
     }
 
     @Override
-    public void update(String oldPath, String newPath) {
-        copy(oldPath, newPath);
-        delete(oldPath);
+    public List<String> findAllPathsByItemName(User user, String name) {
+        return find(rootFolderTemplate.formatted(user.getId()), true).stream()
+                .filter(fileSystemObject -> PathUtil.isContains(fileSystemObject.getName(), name))
+                .flatMap(fileSystemObject ->
+                        PathUtil.getPathsTo(fileSystemObject.getName(), name).stream())
+                .distinct()
+                .toList();
     }
 
     @Override
-    public void updateAll(Map<String, String> newPathByOldPath) {
-        for (Map.Entry<String, String> entry : newPathByOldPath.entrySet()) {
-            if (entry.getKey().endsWith("/")) {
-                save(entry.getValue(), "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
-            } else {
-                copy(entry.getKey(), entry.getValue());
-            }
+    public void update(User user, String path, String oldName, String newName) {
+        var oldParentPath = rootFolderTemplate.formatted(user.getId()) + path;
+        if (oldName.endsWith("/")) {
+            findAllByPrefix(oldParentPath + oldName)
+                    .stream()
+                    .map(FileSystemObject::getName)
+                    .collect(toMap(identity(), oldFullPath -> oldFullPath.replaceFirst(
+                            oldParentPath + oldName, oldParentPath + newName)))
+                    .forEach((oldPath, newPath) -> {
+                        if (oldPath.endsWith("/")) {
+                            putObject(newPath, folderContentType, new ByteArrayInputStream(new byte[]{}));
+                        } else {
+                            copy(oldPath, newPath);
+                        }
+                    });
+        } else {
+            copy(oldParentPath + oldName,
+                    rootFolderTemplate.formatted(user.getId()) + path + newName);
         }
-        deleteAll(newPathByOldPath.keySet().stream().toList());
+        delete(user, oldParentPath, oldName);
     }
 
     @Override
-    public void delete(String path) {
-        removeObject(path);
-        restoreParent(path);
-    }
-
-    @Override
-    public void deleteAll(List<String> paths) {
-        List<DeleteObject> deleteObjects = new ArrayList<>();
-        paths.forEach(path -> deleteObjects.add(new DeleteObject(path)));
-        minioClient.removeObjects(RemoveObjectsArgs.builder()
-                        .bucket(bucketName)
-                        .objects(deleteObjects)
-                        .build())
-                .forEach(lazyRemoval -> {
-                    try {
-                        lazyRemoval.get();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+    public void delete(User user, String path, String name) {
+        var fullPath = rootFolderTemplate.formatted(user.getId()) + path + name;
+        if (name.endsWith("/")) {
+            List<DeleteObject> deleteObjects = findAllByPrefix(fullPath)
+                    .stream()
+                    .map(fileSystemObject -> new DeleteObject(fileSystemObject.getName()))
+                    .toList();
+            minioClient.removeObjects(RemoveObjectsArgs.builder()
+                            .bucket(bucketName)
+                            .objects(deleteObjects)
+                            .build())
+                    .forEach(lazyRemoval -> {
+                        try {
+                            lazyRemoval.get();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        } else {
+            removeObject(fullPath);
+            restoreFolder(rootFolderTemplate.formatted(user.getId()) + path);
+        }
     }
 
     @Override
     public DownloadObject download(User user, String path) {
         DownloadObject downloadObject;
+        String name = Paths.get(path).getFileName().toString();
         if (path.endsWith("/")) {
             try (var buffer = new ByteArrayOutputStream(); var zip = new ZipOutputStream(buffer)) {
                 find(rootFolderTemplate.formatted(user.getId() + path), true).stream()
@@ -118,14 +148,15 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                                 throw new RuntimeException(e);
                             }
                         });
-                downloadObject = new DownloadObject(buffer.toByteArray(), "application/zip");
+                downloadObject = new DownloadObject(name, buffer.toByteArray(), "application/zip");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         } else {
             var getObject = getObject(rootFolderTemplate.formatted(user.getId()) + path);
             try {
-                downloadObject = new DownloadObject(getObject.readAllBytes(), getObject.headers().get("Content-Type"));
+                downloadObject = new DownloadObject(
+                        name, getObject.readAllBytes(), getObject.headers().get("Content-Type"));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -134,44 +165,31 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     }
 
     @Override
-    public void upload(String basePath, List<MultipartFile> files) {
-        if (files.size() > 1) {
-            List<SnowballObject> uploadObjects = new ArrayList<>();
-            files.forEach(file -> {
-                try {
-                    uploadObjects.add(new SnowballObject(
-                            basePath + file.getOriginalFilename(),
-                            file.getInputStream(),
-                            file.getInputStream().available(),
-                            null));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            try {
+    public void upload(User user, String path, List<MultipartFile> files) {
+        var basePath = rootFolderTemplate.formatted(user.getId()) + path;
+        try {
+            if (files.size() > 1) {
+                List<SnowballObject> uploadObjects = new ArrayList<>();
+                files.forEach(file -> {
+                    try {
+                        uploadObjects.add(new SnowballObject(
+                                basePath + file.getOriginalFilename(),
+                                file.getInputStream(),
+                                file.getInputStream().available(),
+                                null));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
                 minioClient.uploadSnowballObjects(UploadSnowballObjectsArgs.builder()
                         .bucket(bucketName)
                         .objects(uploadObjects)
                         .build());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            var file = files.get(0);
-            try {
-                putObject(basePath + file.getOriginalFilename(), file.getContentType(), file.getInputStream());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
 
-    private GetObjectResponse getObject(String path) {
-        try {
-            return minioClient.getObject(GetObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(path)
-                    .build());
+            } else {
+                var file = files.get(0);
+                putObject(basePath + file.getOriginalFilename(), file.getContentType(), file.getInputStream());
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -188,6 +206,27 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<FileSystemObject> find(String prefix, boolean isRecursive) {
+        var rawItems = minioClient.listObjects(ListObjectsArgs.builder()
+                .bucket(bucketName)
+                .prefix(prefix)
+                .recursive(isRecursive)
+                .build());
+
+        List<Item> items = new ArrayList<>();
+        try {
+            for (var rawItem : rawItems) {
+                items.add(rawItem.get());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return items.stream()
+                .map(this::toFileSystemObject)
+                .toList();
     }
 
     private void copy(String sourcePath, String destinationPath) {
@@ -216,33 +255,18 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         }
     }
 
-    private List<FileSystemObject> find(String prefix, boolean isRecursive) {
-        var rawItems = minioClient.listObjects(ListObjectsArgs.builder()
-                .bucket(bucketName)
-                .prefix(prefix)
-                .recursive(isRecursive)
-                .build());
-
-        List<Item> items = new ArrayList<>();
-        try {
-            for (var rawItem : rawItems) {
-                items.add(rawItem.get());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        return items.stream()
-                .map(this::toFileSystemObject)
-                .toList();
+    private void restoreFolder(String path) {
+        putObject(path, folderContentType, new ByteArrayInputStream(new byte[]{}));
     }
 
-    private void restoreParent(String path) {
-        path = path.endsWith("/")
-                ? path.substring(0, path.lastIndexOf("/", path.length() - 2) + 1)
-                : path.substring(0, path.lastIndexOf("/") + 1);
-        if (!path.isEmpty()) {
-            save(path, "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
+    private GetObjectResponse getObject(String path) {
+        try {
+            return minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(path)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

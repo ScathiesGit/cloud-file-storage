@@ -1,8 +1,8 @@
 package git.scathies.cloudfilestorage.service;
 
 import git.scathies.cloudfilestorage.model.FileSystemObject;
+import git.scathies.cloudfilestorage.model.User;
 import git.scathies.cloudfilestorage.repository.FileSystemObjectRepository;
-import git.scathies.cloudfilestorage.util.PathUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,16 +15,16 @@ public class SearchFileSystemObjectServiceImpl implements SearchFileSystemObject
     private final FileSystemObjectRepository fileSystemObjectRepository;
 
     @Override
-    public List<String> getRootFolderContent(Long userId) {
-        return fileSystemObjectRepository.findAllInRootFolder(userId)
+    public List<String> getRootFolderContent(User user) {
+        return fileSystemObjectRepository.findAllInRootFolder(user)
                 .stream()
                 .map(FileSystemObject::getName)
                 .toList();
     }
 
     @Override
-    public List<String> getFolderContent(String path, Long userId) {
-        return fileSystemObjectRepository.findAllInFirstLevel(path, userId)
+    public List<String> getFolderContent(User user, String path) {
+        return fileSystemObjectRepository.findAllInFirstLevel(user, path)
                 .stream()
                 .map(FileSystemObject::getName)
                 .map(objName -> objName.replaceFirst(path, ""))
@@ -32,13 +32,7 @@ public class SearchFileSystemObjectServiceImpl implements SearchFileSystemObject
     }
 
     @Override
-    public List<String> search(String name, String rootFolder) {
-        return fileSystemObjectRepository.findAllByPrefix(rootFolder).stream()
-                .map(FileSystemObject::getName)
-                .filter(path -> PathUtil.isContains(path, name))
-                .flatMap(path -> PathUtil.getPathsTo(path, name).stream())
-                .map(path -> path.replace(rootFolder, ""))
-                .distinct()
-                .toList();
+    public List<String> search(User user, String name) {
+        return fileSystemObjectRepository.findAllPathsByItemName(user, name);
     }
 }

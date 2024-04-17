@@ -18,10 +18,10 @@ public class FileSearchController {
 
     @GetMapping
     public String search(@SessionAttribute User user, String name, Model model) {
-        var basePath = "user-%s-files/".formatted(user.getId());
-        model.addAttribute("found", searchFileSystemObjectService.search(name, basePath));
+        model.addAttribute("found", searchFileSystemObjectService.search(user, name));
         return "search";
     }
+
     // первая проблема - в форме не указал enctype multipart/form-data атрибут тега форм
     // вторая проблема - загружался один файл вместо папки, в контроллере нужно было указать коллекцию MultipartFile
 

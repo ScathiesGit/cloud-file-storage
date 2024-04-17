@@ -1,12 +1,14 @@
 package git.scathies.cloudfilestorage.service;
 
+import git.scathies.cloudfilestorage.model.User;
+
 import java.util.List;
 
 public interface SearchFileSystemObjectService {
 
-    List<String> getRootFolderContent(Long userId);
+    List<String> getRootFolderContent(User user);
 
-    List<String> getFolderContent(String path, Long userId);
+    List<String> getFolderContent(User user, String path);
 
-    List<String> search(String name, String rootFolder);
+    List<String> search(User user, String name);
 }

@@ -24,7 +24,7 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
         user.setPassword(null);
-        fileSystemObjectRepository.createRootFolder(user);
+        fileSystemObjectRepository.saveRootFolder(user);
     }
 
     @Override

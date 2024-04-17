@@ -51,8 +51,8 @@ public class DownloadControllerTest extends BaseIntegrationTest {
                     .build());
         }
 
-        fileSystemObjectRepository.createRootFolder(user);
-        fileSystemObjectRepository.deleteAll(fileSystemObjectRepository.findAllInRootFolder(user.getId())
+        fileSystemObjectRepository.saveRootFolder(user);
+        fileSystemObjectRepository.deleteAll(fileSystemObjectRepository.findAllInRootFolder(user)
                 .stream().map(FileSystemObject::getName).toList());
     }
 
@@ -62,7 +62,7 @@ public class DownloadControllerTest extends BaseIntegrationTest {
         var baos = new ByteArrayOutputStream();
         baos.write("test text".getBytes(StandardCharsets.UTF_8));
         var path = rootFolderTemplate.formatted(user.getId()) + "file.txt";
-        fileSystemObjectRepository.save(path, "text/plain", new ByteArrayInputStream(baos.toByteArray()));
+        fileSystemObjectRepository.saveFile(path, "text/plain", new ByteArrayInputStream(baos.toByteArray()));
 
         var result = mockMvc.perform(get("/download")
                 .param("path", "file.txt")

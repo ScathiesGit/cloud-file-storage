@@ -24,11 +24,9 @@ public class DownloadController {
     @GetMapping("/download")
     public ResponseEntity<ByteArrayResource> download(@SessionAttribute User user, String path) {
         var downloaded = fileSystemObjectService.download(user, path);
-        var filename = Paths.get(path).getFileName().toString();
-
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="
-                        + URLEncoder.encode(filename, StandardCharsets.UTF_8))
+                        + URLEncoder.encode(downloaded.name(), StandardCharsets.UTF_8))
                 .contentType(MediaType.parseMediaType(downloaded.contentType()))
                 .body(new ByteArrayResource(downloaded.content()));
     }

@@ -23,12 +23,15 @@ public class UploadController {
     private final SearchFileSystemObjectService searchFileSystemObjectService;
 
     @PostMapping("/upload")
-    public String upload(@SessionAttribute User user, List<MultipartFile> files, String path, Model model, HttpServletRequest req ) {
-        var basePath = "user-%s-files/%s".formatted(user.getId(), path != null ? path : "");
-        fileSystemObjectService.upload(basePath, files);
-        model.addAttribute("content", searchFileSystemObjectService.getFolderContent(basePath, user.getId()));
-        model.addAttribute("path", path);
-        model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path != null ? path : ""));
+    public String upload(@SessionAttribute User user, List<MultipartFile> files, String path, Model model) {
+        fileSystemObjectService.upload(user, path, files);
+        if (path != null) {
+            model.addAttribute("content", searchFileSystemObjectService.getFolderContent(user, path));
+            model.addAttribute("path", path);
+            model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path));
+        } else {
+            model.addAttribute("content", searchFileSystemObjectService.getRootFolderContent(user));
+        }
         return "test";
     }
 }

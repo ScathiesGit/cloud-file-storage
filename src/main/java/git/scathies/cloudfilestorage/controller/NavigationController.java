@@ -16,36 +16,18 @@ public class NavigationController {
 
     private final SearchFileSystemObjectService searchFileSystemObjectService;
 
-    private final FileSystemObjectService fileSystemObjectService;
-
     @GetMapping
     public String homePage(@RequestParam(required = false) String path,
                            @SessionAttribute User user,
                            Model model) {
         if (user != null) {
             model.addAttribute("content", path == null
-                    ? searchFileSystemObjectService.getRootFolderContent(user.getId())
-                    : searchFileSystemObjectService.getFolderContent(path, user.getId()));
+                    ? searchFileSystemObjectService.getRootFolderContent(user)
+                    : searchFileSystemObjectService.getFolderContent(user, path));
             if (path != null) {
                 model.addAttribute("path", path);
                 model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path));
             }
-        }
-        return "test";
-    }
-
-    @PostMapping
-    public String createFolder(@RequestParam(required = false) String path,
-                               @SessionAttribute User user,
-                               String name,
-                               Model model) {
-        var rootFolder = "user-%s-files/".formatted(user.getId());
-        String fullPath = path != null ? rootFolder + path : rootFolder;
-//        fileSystemObjectService.createFolder(fullPath + name + "/", user.getId());
-        model.addAttribute("content", searchFileSystemObjectService.getFolderContent(fullPath, user.getId()));
-        if (path != null) {
-            model.addAttribute("path", path);
-            model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path));
         }
         return "test";
     }

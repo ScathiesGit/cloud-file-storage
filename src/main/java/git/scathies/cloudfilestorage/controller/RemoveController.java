@@ -21,25 +21,16 @@ public class RemoveController {
     private final SearchFileSystemObjectService searchFileSystemObjectService;
 
     @PostMapping("/remove")
-    public String remove(@SessionAttribute User user, String path, Model model) {
-        var fullPath = "user-%s-files/%s".formatted(user.getId(), path);
-        if (path.endsWith("/")) {
-            fileSystemObjectService.removeFolder(fullPath);
+    public String remove(@SessionAttribute User user, String path, String name, Model model) {
+        fileSystemObjectService.remove(user, path, name);
+        if (path != null) {
+            model.addAttribute("content", searchFileSystemObjectService.getFolderContent(user, path));
+            model.addAttribute("breadcrumb",
+                    BreadcrumbUtil.createBreadcrumbs(path));
+            model.addAttribute("path", path);
         } else {
-            fileSystemObjectService.removeFile(fullPath);
+            model.addAttribute("content", searchFileSystemObjectService.getRootFolderContent(user));
         }
-        // user-10-files/
-        //               text.txt
-        //               folder/
-        //               some/path/text.txt
-        //               path/to/
-
-        String parentFolder = Paths.get(fullPath).getParent() + "/";
-        parentFolder = parentFolder.replace("\\", "/");
-        model.addAttribute("content", searchFileSystemObjectService.getFolderContent(parentFolder, user.getId()));
-        model.addAttribute("breadcrumb",
-                BreadcrumbUtil.createBreadcrumbs(parentFolder.replace("user-" + user.getId() + "-files/","")));
-        model.addAttribute("path", parentFolder.replace("user-" + user.getId() + "-files/",""));
         return "test";
     }
 }

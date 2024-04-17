@@ -1,5 +1,5 @@
 package git.scathies.cloudfilestorage.model;
 
-public record DownloadObject(byte[] content, String contentType) {
+public record DownloadObject(String name, byte[] content, String contentType) {
 
 }

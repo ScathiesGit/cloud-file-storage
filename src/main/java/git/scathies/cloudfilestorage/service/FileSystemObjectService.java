@@ -11,17 +11,13 @@ public interface FileSystemObjectService {
 
     void createFile(String path, String contentType, InputStream inputStream);
 
-    void renameFile(String path, String newName);
+    void remove(User user, String path, String name);
 
-    void removeFile(String fullPath);
+    void createFolder(User user, String path, String name);
 
-    void createFolder(User user, String path);
-
-    void renameFolder(String fullPath, String folderName);
-
-    void removeFolder(String path);
+    void rename(User user, String path, String oldName, String newName);
 
     DownloadObject download(User user, String path);
 
-    void upload(String basePath, List<MultipartFile> files);
+    void upload(User user, String path, List<MultipartFile> files);
 }

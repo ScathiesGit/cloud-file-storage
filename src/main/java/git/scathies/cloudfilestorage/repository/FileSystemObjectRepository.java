@@ -7,29 +7,28 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 
 public interface FileSystemObjectRepository {
-    
-    void save(String path, String contentType, InputStream inputStream);
 
-    void createRootFolder(User user);
+    void saveFile(String path, String contentType, InputStream inputStream);
+
+    void saveFolder(User user, String path, String name);
+
+    void saveRootFolder(User user);
 
     List<FileSystemObject> findAllByPrefix(String prefix);
 
-    List<FileSystemObject> findAllInRootFolder(Long userId);
+    List<FileSystemObject> findAllInRootFolder(User user);
 
-    List<FileSystemObject> findAllInFirstLevel(String path, Long userId);
+    List<FileSystemObject> findAllInFirstLevel(User user, String path);
 
-    void update(String oldPath, String newPath);
+    List<String> findAllPathsByItemName(User user, String name);
 
-    void updateAll(Map<String, String> oldPathToNewPath);
+    void update(User user, String path, String oldName, String newName);
 
-    void delete(String path);
-
-    void deleteAll(List<String> paths);
+    void delete(User user, String path, String name);
 
     DownloadObject download(User user, String path);
 
-    void upload(String basePath, List<MultipartFile> files);
+    void upload(User user, String path, List<MultipartFile> files);
 }

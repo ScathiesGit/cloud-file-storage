@@ -22,22 +22,15 @@ public class RenameController {
     private final SearchFileSystemObjectService searchFileSystemObjectService;
 
     @PostMapping("/change")
-    public String changeName(@SessionAttribute User user, String path, String newName, Model model) {
-        var rootFolder = "user-%s-files/".formatted(user.getId());
-        var fullPath = rootFolder + path;
-        if (path.endsWith("/")) {
-            fileSystemObjectService.renameFolder(fullPath, newName);
+    public String changeName(@SessionAttribute User user, String path, String oldName, String newName, Model model) {
+        fileSystemObjectService.rename(user, path, oldName, newName);
+        if (path != null) {
+            model.addAttribute("content", searchFileSystemObjectService.getFolderContent(user, path));
+            model.addAttribute("path", path);
+            model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path));
         } else {
-            fileSystemObjectService.renameFile(fullPath, newName);
+            model.addAttribute("content", searchFileSystemObjectService.getRootFolderContent(user));
         }
-        Path parent = Paths.get(path).getParent();
-        String path1 = parent != null ? parent.toString().replace("\\", "/") + "/" : "";
-        model.addAttribute("content", searchFileSystemObjectService.getFolderContent(
-                rootFolder + path1, user.getId()
-        ));
-        model.addAttribute("path", path1);
-        model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path1));
-
         return "test";
     }
 }
