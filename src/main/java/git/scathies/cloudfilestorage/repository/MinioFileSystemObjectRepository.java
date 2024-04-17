@@ -1,6 +1,7 @@
 package git.scathies.cloudfilestorage.repository;
 
 import git.scathies.cloudfilestorage.model.FileSystemObject;
+import git.scathies.cloudfilestorage.model.User;
 import io.minio.*;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
@@ -35,6 +36,20 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                     .object(path)
                     .stream(inputStream, inputStream.available(), -1)
                     .contentType(contentType)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void createRootFolder(User user) {
+        try {
+            minioClient.putObject(PutObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(rootFolderTemplate.formatted(user.getId()))
+                    .stream(new ByteArrayInputStream(new byte[]{}), 0, -1)
+                    .contentType("octet/binary-stream")
                     .build());
         } catch (Exception e) {
             throw new RuntimeException(e);

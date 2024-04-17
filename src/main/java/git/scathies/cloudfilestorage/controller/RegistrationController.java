@@ -16,8 +16,6 @@ public class RegistrationController {
 
     private final UserService userService;
 
-    private final FileSystemObjectService fileSystemObjectService;
-
     @GetMapping
     public String registrationForm() {
         return "registration";
@@ -26,7 +24,6 @@ public class RegistrationController {
     @PostMapping
     public String processRegistration(User user) {
         userService.createUser(user);
-        fileSystemObjectService.createFolder("user-" + user.getId() + "-files/");
         return "test";
     }
 }

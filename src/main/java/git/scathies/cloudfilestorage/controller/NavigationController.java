@@ -41,7 +41,7 @@ public class NavigationController {
                                Model model) {
         var rootFolder = "user-%s-files/".formatted(user.getId());
         String fullPath = path != null ? rootFolder + path : rootFolder;
-        fileSystemObjectService.createFolder(fullPath + name + "/");
+        fileSystemObjectService.createFolder(fullPath + name + "/", );
         model.addAttribute("content", searchFileSystemObjectService.getFolderContent(fullPath, user.getId()));
         if (path != null) {
             model.addAttribute("path", path);
