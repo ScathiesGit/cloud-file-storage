@@ -1,6 +1,8 @@
 package git.scathies.cloudfilestorage.service;
 
-import git.scathies.cloudfilestorage.dto.DownloadObject;
+import git.scathies.cloudfilestorage.model.DownloadObject;
+import git.scathies.cloudfilestorage.model.FileSystemObject;
+import git.scathies.cloudfilestorage.model.User;
 import git.scathies.cloudfilestorage.repository.FileSystemObjectRepository;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
@@ -34,71 +36,36 @@ public class FileSystemObjectServiceImpl implements FileSystemObjectService {
         fileSystemObjectRepository.update(path, newPath);
     }
 
-//    public void moveFile(String sourcePath, String destinationPath) {
-//        fileSystemObjectRepository.update(sourcePath, destinationPath);
-//    }
-
     public void removeFile(String path) {
         fileSystemObjectRepository.delete(path);
     }
 
-    public void createFolder(String path) {
-        fileSystemObjectRepository.save(path, "binary/octet-stream",
-                new ByteArrayInputStream(new byte[]{}));
+    public void createFolder(User user, String path) {
+//        fileSystemObjectRepository.save(user, path, "binary/octet-stream",
+//                new ByteArrayInputStream(new byte[]{}));
     }
 
     public void renameFolder(String path, String name) {
-        var newPrefix = path.substring(0, path.lastIndexOf("/", path.length() - 2) + 1) + name + "/";
-        var objectsFileSystem = fileSystemObjectRepository.findAllByPrefix(path);
-
-        Map<String, String> oldPathToNewPath = objectsFileSystem.stream().collect(
-                toMap(Item::objectName, value -> value.objectName().replaceFirst(path, newPrefix)));
-
-        fileSystemObjectRepository.updateAll(oldPathToNewPath);
+//        var newPrefix = path.substring(0, path.lastIndexOf("/", path.length() - 2) + 1) + name + "/";
+//        var objectsFileSystem = fileSystemObjectRepository.findAllByPrefix(path);
+//
+//        Map<String, String> oldPathToNewPath = objectsFileSystem.stream().collect(
+////                toMap(Item::objectName, value -> value.objectName().replaceFirst(path, newPrefix)));
+//
+//        fileSystemObjectRepository.updateAll(oldPathToNewPath);
     }
 
     public void removeFolder(String path) {
-        var paths = fileSystemObjectRepository.findAllByPrefix(path)
-                .stream()
-                .map(Item::objectName)
-                .toList();
-        fileSystemObjectRepository.deleteAll(paths);
+//        var paths = fileSystemObjectRepository.findAllByPrefix(path)
+//                .stream()
+//                .map(Item::objectName)
+//                .toList();
+//        fileSystemObjectRepository.deleteAll(paths);
     }
 
     @Override
-    public DownloadObject download(String path) {
-        byte[] content;
-        String contentType;
-        if (path.endsWith("/")) {
-            try (var buffer = new ByteArrayOutputStream(); var zip = new ZipOutputStream(buffer)) {
-                fileSystemObjectRepository.findAllByPrefix(path)
-                        .stream()
-                        .map(Item::objectName)
-                        .map(fileSystemObjectRepository::download)
-                        .forEach(resp -> {
-                            try {
-                                var entry = new ZipEntry(resp.object().replace(path, ""));
-                                zip.putNextEntry(entry);
-                                zip.write(resp.readAllBytes());
-                                resp.close();
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
-                content = buffer.toByteArray();
-                contentType = "application/zip";
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            try (var resp = fileSystemObjectRepository.download(path)) {
-                contentType = resp.headers().get("Content-type");
-                content = resp.readAllBytes();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return new DownloadObject(content, contentType);
+    public DownloadObject download(User user, String path) {
+        return fileSystemObjectRepository.download(user, path);
     }
 
     @Override

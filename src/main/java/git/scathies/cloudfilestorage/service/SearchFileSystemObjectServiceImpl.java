@@ -3,7 +3,6 @@ package git.scathies.cloudfilestorage.service;
 import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.repository.FileSystemObjectRepository;
 import git.scathies.cloudfilestorage.util.PathUtil;
-import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

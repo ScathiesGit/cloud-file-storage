@@ -1,5 +1,6 @@
 package git.scathies.cloudfilestorage.repository;
 
+import git.scathies.cloudfilestorage.model.DownloadObject;
 import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.model.User;
 import io.minio.*;
@@ -11,11 +12,14 @@ import org.springframework.stereotype.Repository;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Repository
 @RequiredArgsConstructor
@@ -23,37 +27,21 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
 
     private final MinioClient minioClient;
 
-    @Value("${minio.bucket-name}")
+    @Value("${file-storage.bucket-name}")
     private final String bucketName;
 
-    private final String rootFolderTemplate = "user-%s-files/";
+    @Value("${file-storage.root-folder-template")
+    private final String rootFolderTemplate;
 
     @Override
     public void save(String path, String contentType, InputStream inputStream) {
-        try {
-            minioClient.putObject(PutObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(path)
-                    .stream(inputStream, inputStream.available(), -1)
-                    .contentType(contentType)
-                    .build());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        putObject(path, contentType, inputStream);
     }
 
     @Override
     public void createRootFolder(User user) {
-        try {
-            minioClient.putObject(PutObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(rootFolderTemplate.formatted(user.getId()))
-                    .stream(new ByteArrayInputStream(new byte[]{}), 0, -1)
-                    .contentType("octet/binary-stream")
-                    .build());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        putObject(rootFolderTemplate.formatted(user.getId()), "octet/binary-stream",
+                new ByteArrayInputStream(new byte[]{}));
     }
 
     @Override
@@ -110,24 +98,39 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                         throw new RuntimeException(e);
                     }
                 });
-
     }
 
     @Override
-    public GetObjectResponse download(String path) {
-        try {
-            return minioClient.getObject(GetObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(path)
-                    .build());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    public DownloadObject download(User user, String path) {
+        DownloadObject downloadObject;
+        if (path.endsWith("/")) {
+            try (var buffer = new ByteArrayOutputStream(); var zip = new ZipOutputStream(buffer)) {
+                find(rootFolderTemplate.formatted(user.getId() + path), true).stream()
+                        .map(FileSystemObject::getName)
+                        .map(this::getObject)
+                        .forEach(resp -> {
+                            try {
+                                var entry = new ZipEntry(resp.object());
+                                zip.putNextEntry(entry);
+                                zip.write(resp.readAllBytes());
+                                resp.close();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+                downloadObject = new DownloadObject(buffer.toByteArray(), "application/zip");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            var getObject = getObject(rootFolderTemplate.formatted(user.getId()) + path);
+            try {
+                downloadObject = new DownloadObject(getObject.readAllBytes(), getObject.headers().get("Content-Type"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
-    }
-
-    @Override
-    public void downloadAll(String path) {
-
+        return downloadObject;
     }
 
     @Override
@@ -154,17 +157,36 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                 throw new RuntimeException(e);
             }
         } else {
+            var file = files.get(0);
             try {
-                var file = files.get(0);
-                minioClient.putObject(PutObjectArgs.builder()
-                        .bucket(bucketName)
-                        .contentType(file.getContentType())
-                        .object(basePath + file.getOriginalFilename())
-                        .stream(file.getInputStream(), file.getInputStream().available(), -1)
-                        .build());
-            } catch (Exception e) {
+                putObject(basePath + file.getOriginalFilename(), file.getContentType(), file.getInputStream());
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private GetObjectResponse getObject(String path) {
+        try {
+            return minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(path)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void putObject(String path, String contentType, InputStream inputStream) {
+        try {
+            minioClient.putObject(PutObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(path)
+                    .contentType(contentType)
+                    .stream(inputStream, inputStream.available(), -1)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -222,15 +244,6 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         if (!path.isEmpty()) {
             save(path, "binary/octet-stream", new ByteArrayInputStream(new byte[]{}));
         }
-    }
-
-    private List<String> sortDescending(List<String> paths) {
-        return paths.stream()
-                .map(path -> path.replace("/", "/ ").split("/"))
-                .sorted((o1, o2) -> o2.length - o1.length)
-                .map(array -> String.join("", array))
-                .map(path -> path.replace(" ", "/"))
-                .toList();
     }
 
     private FileSystemObject toFileSystemObject(Item item) {

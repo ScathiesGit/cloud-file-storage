@@ -9,9 +9,9 @@ import org.springframework.context.annotation.Configuration;
 public class MinioConfiguration {
 
     @Bean(name = "minioClient")
-    public MinioClient minioClient(@Value("${minio.username}") String username,
-                                   @Value("${minio.password}") String password,
-                                   @Value("${minio.endpoint}") String endpoint) {
+    public MinioClient minioClient(@Value("${file-storage.username}") String username,
+                                   @Value("${file-storage.password}") String password,
+                                   @Value("${file-storage.endpoint}") String endpoint) {
 
         return MinioClient.builder()
                 .endpoint(endpoint)

@@ -1,11 +1,5 @@
 package git.scathies.cloudfilestorage.util;
 
-import git.scathies.cloudfilestorage.CloudFileStorageApplication;
-import git.scathies.cloudfilestorage.service.FileSystemObjectServiceImpl;
-import git.scathies.cloudfilestorage.service.SearchFileSystemObjectServiceImpl;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
 import java.util.ArrayList;
 import java.util.List;
 

@@ -26,7 +26,7 @@ public class BaseIntegrationTest {
 
     @DynamicPropertySource
     static void propertyRegistry(DynamicPropertyRegistry registry) {
-        registry.add("minio.endpoint", MINIO_CONTAINER::getS3URL);
+        registry.add("file-storage.endpoint", MINIO_CONTAINER::getS3URL);
         registry.add("spring.datasource.url", MYSQL_CONTAINER::getJdbcUrl);
     }
 }

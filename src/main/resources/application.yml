@@ -12,8 +12,9 @@ spring:
   liquibase:
     change-log: classpath:./db/changelog/db.changelog-master.yml
 
-minio:
+file-storage:
   username: admin
   password: password
   endpoint: http:/localhost:9000
   bucket-name: dev-cfs
+  root-folder-template: user-%s-files/

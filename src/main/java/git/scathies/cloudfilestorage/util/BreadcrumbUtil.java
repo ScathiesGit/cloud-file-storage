@@ -1,6 +1,7 @@
 package git.scathies.cloudfilestorage.util;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BreadcrumbUtil {
 

@@ -3,9 +3,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: test
     password: test
-#    url:
 
-minio:
+file-storage:
   username: minioadmin
   password: minioadmin
   bucket-name: test

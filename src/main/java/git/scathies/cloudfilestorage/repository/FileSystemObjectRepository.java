@@ -1,9 +1,8 @@
 package git.scathies.cloudfilestorage.repository;
 
+import git.scathies.cloudfilestorage.model.DownloadObject;
 import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.model.User;
-import io.minio.GetObjectResponse;
-import io.minio.messages.Item;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -30,9 +29,7 @@ public interface FileSystemObjectRepository {
 
     void deleteAll(List<String> paths);
 
-    GetObjectResponse download(String path);
-
-    void downloadAll(String path);
+    DownloadObject download(User user, String path);
 
     void upload(String basePath, List<MultipartFile> files);
 }

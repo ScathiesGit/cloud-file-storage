@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 
 @Controller
 @RequiredArgsConstructor
-public class ChangeNameController {
+public class RenameController {
 
     private final FileSystemObjectService fileSystemObjectService;
 
