@@ -10,8 +10,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.util.List;
 
-import static java.util.stream.Collectors.toMap;
-
 @Service
 @RequiredArgsConstructor
 public class FileSystemObjectServiceImpl implements FileSystemObjectService {

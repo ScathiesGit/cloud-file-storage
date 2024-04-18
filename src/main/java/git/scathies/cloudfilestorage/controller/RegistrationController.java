@@ -23,6 +23,6 @@ public class RegistrationController {
     @PostMapping
     public String processRegistration(User user) {
         userService.createUser(user);
-        return "test";
+        return "file-storage-page";
     }
 }

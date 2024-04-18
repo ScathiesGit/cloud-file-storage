@@ -6,7 +6,9 @@ import git.scathies.cloudfilestorage.service.SearchFileSystemObjectService;
 import git.scathies.cloudfilestorage.util.BreadcrumbUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttribute;
 
 @RequiredArgsConstructor
 public class CreateFolderController {
@@ -27,6 +29,6 @@ public class CreateFolderController {
             model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path));
         }
 
-        return "test";
+        return "file-storage-page";
     }
 }

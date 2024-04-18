@@ -2,12 +2,8 @@ package git.scathies.cloudfilestorage.integration;
 
 import git.scathies.cloudfilestorage.repository.FileSystemObjectRepository;
 import git.scathies.cloudfilestorage.service.FileSystemObjectService;
-import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
-import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
-import io.minio.errors.ErrorResponseException;
-import io.minio.messages.Item;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -16,11 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.ByteArrayInputStream;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertAll;
 
 @Disabled
 public class FileSystemObjectServiceTest extends BaseIntegrationTest {

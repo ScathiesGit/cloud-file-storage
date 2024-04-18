@@ -22,14 +22,14 @@
         <!--        left part-->
         <div class="col-3 row row-cols-1">
             <div class="col">
-                <form method="post" action="/upload" enctype="multipart/form-data">
+                <form method="post" action="/" enctype="multipart/form-data">
                     <input type="file" name="files">
                     <input type="hidden" name="path" th:value="${path}">
                     <button type="submit" class="btn btn-primary mb-2">Загрузить файл</button>
                 </form>
             </div>
             <div class="col">
-                <form method="post" action="/upload" enctype="multipart/form-data">
+                <form method="post" action="/" enctype="multipart/form-data">
                     <div class="input-group">
                         <input type="file" name="files" webkitdirectory>
                         <input type="hidden" name="path" th:value="${path}">
@@ -87,31 +87,35 @@
                         </th>
                         <th scope="row" th:if="${name.endsWith('/')}">
                             <form action="/" method="get">
-                            <a th:href="'/?path=' + (${path != null ? path + name : name})"
-                               th:text="${name.substring(0, name.length() - 1)}">
-                                <img th:src="@{/image/folder_img.png}" alt="Папка" style="width: 30px; height: 30px;">
-                            </a>
+                                <a th:href="'/?path=' + (${path != null ? path + name : name})"
+                                   th:text="${name.substring(0, name.length() - 1)}">
+                                    <img th:src="@{/image/folder_img.png}" alt="Папка"
+                                         style="width: 30px; height: 30px;">
+                                </a>
                             </form>
                         </th>
                         <td>...</td>
                         <td>...</td>
                         <td>
-                            <form method="post" action="/change">
-                                <input type="text" name="newName">
-                                <input type="hidden" name="path" th:value="${path == null ? name : path + name}">
-                                <button class="btn btn-sm btn-outline-dark" type="submit">></button>
+                            <form action="/">
+                                <input id="newName" type="text" name="newName">
+                                <input id="oldName" type="hidden" name="oldName" th:value="name">
+                                <input id="renamePath" type="hidden" name="path" th:value="${path == null ? '' : path}">
+                                <button onclick="rename()" class="btn btn-sm btn-outline-dark" type="submit"> ></button>
                             </form>
                         </td>
                         <td>
+                            <!--                        нужно будет сделать для скачивания    -->
                             <form method="get" action="/download">
                                 <input type="hidden" name="path" th:value="${path == null ? name : path + name}">
                                 <button class="btn btn-sm btn-outline-dark" type="submit">></button>
                             </form>
                         </td>
                         <td>
-                            <form method="post" action="/remove">
-                                <input type="hidden" name="path" th:value="${path == null ? name : path + name}">
-                                <button class="btn btn-sm btn-outline-dark" type="submit">></button>
+                            <form action="/">
+                                <input id="removeName" type="hidden" th:value="${name}">
+                                <input id="removePath" type="hidden" name="path" th:value="${path == null ? '' : path}">
+                                <button onclick="remove()" class="btn btn-sm btn-outline-dark" type="submit">></button>
                             </form>
                         </td>
                     </tr>
@@ -121,6 +125,66 @@
         </div>
     </div>
 </div>
+
+<script>
+    function rename() {
+        const url = 'http://localhost:8080/';
+        const newName = document.getElementById("newName");
+        const oldName = document.getElementById("oldName");
+        const path = document.getElementById("renamePath");
+        const data = {
+            newName: newName,
+            oldName: oldName,
+            path: path
+        };
+        const options = {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data),
+        };
+
+        fetch(url, options)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+            })
+            .catch(error => {
+                console.error('There was a problem with your fetch operation:', error);
+
+            });
+    }
+
+    function remove() {
+        const url = 'http://localhost:8080/';
+        const name = document.getElementById("removeName");
+        const path = document.getElementById("removePath");
+        const data = {
+            name: name,
+            path: path
+        };
+        const options = {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data),
+        };
+
+        fetch(url, options)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+            })
+            .catch(error => {
+                console.error('There was a problem with your fetch operation:', error);
+
+            });
+    }
+</script>
 
 <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/breadcrumb.js}"></script>

@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 
 @Controller
 @RequiredArgsConstructor
