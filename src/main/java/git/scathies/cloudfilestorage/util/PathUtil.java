@@ -18,18 +18,6 @@ public class PathUtil {
         return false;
     }
 
-    public static void main(String[] args) {
-        System.out.println(isContains(
-                "user-10-files/tracker-master/src/main/java/i/bobrov/tracker/store/Store.java",
-                "tracker")
-        );
-
-        System.out.println(getPathsTo(
-                "user-10-files/tracker-master/src/main/java/i/bobrov/tracker/store/Store.java",
-                "tracker")
-        );
-    }
-
     public static List<String> getPathsTo(String path, String destination) {
         List<String> requiredPaths = new ArrayList<>();
         var pathParts = path.split(destination);

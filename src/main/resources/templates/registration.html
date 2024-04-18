@@ -16,7 +16,7 @@
 <div class="container p-3 mb-2 bg-info-subtle text-info-emphasis">
     <div class="row">
         <div class="col-md-6 offset-md-3 d-flex justify-content-center">
-            <form class="form-sign-up" method="POST" action="/registration">
+            <form class="form-sign-up" method="POST" action="/auth/reg">
                 <h3 class="form-sign-up text-dark">Please sign up</h3>
                 <div class="text-sm-start text-danger" style="max-width: 200px"  th:if="${reason}">
                     <span th:text="${reason}">password: пароль должен содержать минимум 5 символов</span>

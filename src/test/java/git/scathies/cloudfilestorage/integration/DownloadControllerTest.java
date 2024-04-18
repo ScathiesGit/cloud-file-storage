@@ -45,15 +45,15 @@ public class DownloadControllerTest extends BaseIntegrationTest {
     @BeforeEach
     @SneakyThrows
     void setUp() {
-        if (!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
-            minioClient.makeBucket(MakeBucketArgs.builder()
-                    .bucket(bucketName)
-                    .build());
-        }
-
-        fileSystemObjectRepository.saveRootFolder(user);
-        fileSystemObjectRepository.deleteAll(fileSystemObjectRepository.findAllInRootFolder(user)
-                .stream().map(FileSystemObject::getName).toList());
+//        if (!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())) {
+//            minioClient.makeBucket(MakeBucketArgs.builder()
+//                    .bucket(bucketName)
+//                    .build());
+//        }
+//
+//        fileSystemObjectRepository.saveRootFolder(user);
+//        fileSystemObjectRepository.deleteAll(fileSystemObjectRepository.findAllInRootFolder(user)
+//                .stream().map(FileSystemObject::getName).toList());
     }
 
     @Test

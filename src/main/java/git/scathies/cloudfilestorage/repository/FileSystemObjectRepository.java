@@ -16,8 +16,6 @@ public interface FileSystemObjectRepository {
 
     void saveRootFolder(User user);
 
-    List<FileSystemObject> findAllByPrefix(String prefix);
-
     List<FileSystemObject> findAllInRootFolder(User user);
 
     List<FileSystemObject> findAllInFirstLevel(User user, String path);

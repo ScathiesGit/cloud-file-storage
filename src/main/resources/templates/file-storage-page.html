@@ -38,7 +38,7 @@
                 </form>
             </div>
             <div class="col">
-                <form method="post" action="/">
+                <form method="post" action="/create">
                     <input type="text" name="name" placeholder="имя папки">
                     <input type="hidden" name="path" th:value="${path}">
                     <button type="submit" class="btn btn-primary mb-2">Создать папку</button>
@@ -50,21 +50,20 @@
         <div class="col-9 row row-cols-1">
             <!--            breadcrumbs-->
             <div class="col-12 align-self-center">
-                <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';"
-                     th:with="partsPath=${#strings.arraySplit(path, '/')}">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item" onclick="sendRequest('/')">
-                            <a href="#">главная</a>
-                        </li>
-                        <li th:classappend="${iterStat.last} ? 'breadcrumb-item active' : 'breadcrumb-item'"
-                            th:each="part, iterStat : ${partsPath}"
-                            th:attr="aria-current=${iterStat.last ? 'page' : null}">
-                            <a href="#" th:unless="${iterStat.last}" th:text="${part}"
-                               th:value="${breadcrumb.get(part)}"
-                               onclick="sendRequest(this.getAttribute('value'))"></a>
-                            <a th:if="${iterStat.last}" th:text="${part}"></a>
-                        </li>
-                    </ol>
+                <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item" onclick="sendRequest('/')">
+                        <a href="#">главная</a>
+                    </li>
+                    <li th:each="part, iterStat : ${breadcrumb}"
+                        th:classappend="${iterStat.last} ? 'breadcrumb-item active' : 'breadcrumb-item'"
+                        th:attr="aria-current=${iterStat.last ? 'page' : null}">
+                        <a href="#" th:unless="${iterStat.last}" th:text="${part.getKey()}"
+                           th:value="${part.getValue()}"
+                           onclick="sendRequest(this.getAttribute('value'))"></a>
+                        <a th:if="${iterStat.last}" th:text="${part.getKey()}"></a>
+                    </li>
+                </ol>
                 </nav>
             </div>
 
@@ -73,8 +72,6 @@
                     <thead>
                     <tr>
                         <th scope="col">имя</th>
-                        <th scope="col">последнее изменение</th>
-                        <th scope="col">размер</th>
                         <th scope="col">переименовать</th>
                         <th scope="col">скачать</th>
                         <th scope="col">удалить</th>
@@ -82,10 +79,10 @@
                     </thead>
                     <tbody>
                     <tr th:each="name: ${content}" th:if="${not name.isEmpty()}">
-                        <th scope="row" th:if="${not name.endsWith('/')}" th:text="${name}">
+                        <th scope="row" th:if="${not name.isEmpty() && not name.endsWith('/')}" th:text="${name}">
                             <img th:src="@{/image/file_img.png}" alt="Файл" style="width: 30px; height: 30px;">
                         </th>
-                        <th scope="row" th:if="${name.endsWith('/')}">
+                        <th scope="row" th:if="${not name.isEmpty() && name.endsWith('/')}">
                             <form action="/" method="get">
                                 <a th:href="'/?path=' + (${path != null ? path + name : name})"
                                    th:text="${name.substring(0, name.length() - 1)}">
@@ -94,29 +91,26 @@
                                 </a>
                             </form>
                         </th>
-                        <td>...</td>
-                        <td>...</td>
                         <td>
-                            <form action="/">
-                                <input id="newName" type="text" name="newName">
-                                <input id="oldName" type="hidden" name="oldName" th:value="name">
-                                <input id="renamePath" type="hidden" name="path" th:value="${path == null ? '' : path}">
-                                <button onclick="rename()" class="btn btn-sm btn-outline-dark" type="submit"> ></button>
-                            </form>
+                            <input th:id="${name}" type="text" name="newName">
+                            <button th:data-oldName="${name}" th:data-path="${path}"
+                                    onclick="rename(this.getAttribute('data-oldName'), this.getAttribute('data-path'))"
+                                    class="btn btn-sm btn-outline-dark" type="button">
+                                >
+                            </button>
                         </td>
                         <td>
-                            <!--                        нужно будет сделать для скачивания    -->
                             <form method="get" action="/download">
                                 <input type="hidden" name="path" th:value="${path == null ? name : path + name}">
                                 <button class="btn btn-sm btn-outline-dark" type="submit">></button>
                             </form>
                         </td>
                         <td>
-                            <form action="/">
-                                <input id="removeName" type="hidden" th:value="${name}">
-                                <input id="removePath" type="hidden" name="path" th:value="${path == null ? '' : path}">
-                                <button onclick="remove()" class="btn btn-sm btn-outline-dark" type="submit">></button>
-                            </form>
+                            <button th:data-name="${name}" th:data-path="${path != null ? path : ''}"
+                                    onclick="remove(this.getAttribute('data-name'), this.getAttribute('data-path'))"
+                                    class="btn btn-sm btn-outline-danger" type="button">
+                                x
+                            </button>
                         </td>
                     </tr>
                     </tbody>
@@ -126,68 +120,9 @@
     </div>
 </div>
 
-<script>
-    function rename() {
-        const url = 'http://localhost:8080/';
-        const newName = document.getElementById("newName");
-        const oldName = document.getElementById("oldName");
-        const path = document.getElementById("renamePath");
-        const data = {
-            newName: newName,
-            oldName: oldName,
-            path: path
-        };
-        const options = {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data),
-        };
 
-        fetch(url, options)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-            })
-            .catch(error => {
-                console.error('There was a problem with your fetch operation:', error);
-
-            });
-    }
-
-    function remove() {
-        const url = 'http://localhost:8080/';
-        const name = document.getElementById("removeName");
-        const path = document.getElementById("removePath");
-        const data = {
-            name: name,
-            path: path
-        };
-        const options = {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data),
-        };
-
-        fetch(url, options)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-            })
-            .catch(error => {
-                console.error('There was a problem with your fetch operation:', error);
-
-            });
-    }
-</script>
-
+<script th:src="@{/js/put_delete_scripts.js}"></script>
 <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
 <script th:src="@{/js/breadcrumb.js}"></script>
-<!--<script th:src="@{/js/dropdown.js}"></script>-->
 </body>
 </html>
