@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.ZonedDateTime;
 import java.util.Map;
 
 @Data
@@ -17,6 +16,4 @@ public class FileSystemObject {
     private Long size;
 
     private Map<String, String> userMetadata;
-
-    private ZonedDateTime lastModified;
 }

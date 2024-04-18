@@ -5,11 +5,13 @@ import git.scathies.cloudfilestorage.service.FileSystemObjectService;
 import git.scathies.cloudfilestorage.service.SearchFileSystemObjectService;
 import git.scathies.cloudfilestorage.util.BreadcrumbUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 
+@Controller
 @RequiredArgsConstructor
 public class CreateFolderController {
 
@@ -17,7 +19,7 @@ public class CreateFolderController {
 
     private final SearchFileSystemObjectService searchFileSystemObjectService;
 
-    @PostMapping
+    @PostMapping("/create")
     public String createFolder(@RequestParam(required = false) String path,
                                @SessionAttribute User user,
                                String name,
@@ -28,7 +30,6 @@ public class CreateFolderController {
             model.addAttribute("path", path);
             model.addAttribute("breadcrumb", BreadcrumbUtil.createBreadcrumbs(path));
         }
-
         return "file-storage-page";
     }
 }

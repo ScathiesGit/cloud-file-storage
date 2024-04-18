@@ -18,7 +18,7 @@
 <div class="container p-3 mb-2 bg-info-subtle text-info-emphasis">
     <div class="row">
         <div class="col-md-6 offset-md-3 d-flex justify-content-center">
-            <form class="form-sign-up" method="POST" action="/login">
+            <form class="form-sign-up" method="POST" action="/auth">
                 <h3 class="form-sign-up text-dark">Please sign in</h3>
                 <p style="color: darkred" th:if="${param.error}">Bad credentials</p>
                 <div class="input-group mb-2">
@@ -29,7 +29,7 @@
                 </div>
                 <div class="input-group mb-2">
                     <button type="submit" class="btn btn-outline-secondary">Sign in</button>
-                    <a href="/registration" class="btn btn-outline-dark me-2">Sign up</a>
+                    <a href="/auth/reg" class="btn btn-outline-dark me-2">Sign up</a>
                 </div>
             </form>
         </div>
