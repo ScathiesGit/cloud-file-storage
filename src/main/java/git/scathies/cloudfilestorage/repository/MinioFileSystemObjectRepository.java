@@ -129,6 +129,9 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         }
     }
 
+    public static void main(String[] args) {
+    }
+
     @Override
     public DownloadObject download(User user, String path) {
         String name = Paths.get(path).getFileName().toString();
