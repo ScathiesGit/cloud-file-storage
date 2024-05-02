@@ -17,12 +17,11 @@ public class SecurityConfiguration {
         http.csrf(AbstractHttpConfigurer::disable);
 
         http.authorizeHttpRequests(req -> req
-                .requestMatchers("/auth", "/auth/reg").permitAll()
+                .requestMatchers("/auth", "/auth/reg", "/").permitAll()
                 .anyRequest().authenticated());
 
         http.formLogin(login -> login
                 .loginPage("/auth")
-                .permitAll()
                 .successHandler(authenticationSuccessHandler()));
 
         return http.build();

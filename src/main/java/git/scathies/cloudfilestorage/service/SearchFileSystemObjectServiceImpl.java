@@ -33,6 +33,6 @@ public class SearchFileSystemObjectServiceImpl implements SearchFileSystemObject
 
     @Override
     public List<String> search(User user, String name) {
-        return fileSystemObjectRepository.findAllPathsByItemName(user, name);
+        return fileSystemObjectRepository.findAllPathsToItem(user, name);
     }
 }

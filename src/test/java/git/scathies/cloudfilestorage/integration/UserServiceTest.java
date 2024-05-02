@@ -1,5 +1,6 @@
 package git.scathies.cloudfilestorage.integration;
 
+import git.scathies.cloudfilestorage.BaseTest;
 import git.scathies.cloudfilestorage.model.User;
 import git.scathies.cloudfilestorage.repository.UserRepository;
 import git.scathies.cloudfilestorage.service.UserService;
@@ -15,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @Disabled
-public class UserServiceTest extends BaseIntegrationTest {
+public class UserServiceTest extends BaseTest {
 
     @Autowired
     private UserRepository userRepository;

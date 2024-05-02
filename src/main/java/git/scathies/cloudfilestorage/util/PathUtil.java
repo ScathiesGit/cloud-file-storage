@@ -1,36 +1,49 @@
 package git.scathies.cloudfilestorage.util;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PathUtil {
 
     public static boolean isContains(String path, String node) {
-        var isContains = false;
-        var pathParts = path.split("/");
-        for (var pathPart : pathParts) {
-            isContains = pathPart.contains(".") ? pathPart.substring(0, pathPart.indexOf(".")).equals(node)
-                    : pathPart.equals(node);
-            if (isContains) {
+        for (var pathPart : path.split("/")) {
+            if (areEqual(pathPart, node)) {
                 return true;
             }
         }
         return false;
     }
 
-    public static List<String> getPathsTo(String path, String destination) {
-        List<String> requiredPaths = new ArrayList<>();
-        var pathParts = path.split(destination);
-        for (int i = 0; i < pathParts.length - 1; i++) {
-            var reqPath = i == 0 ? pathParts[0] : requiredPaths.get(i - 1) + destination + pathParts[i];
-            requiredPaths.add(reqPath);
-        }
+    public static void main(String[] args) {
+        System.out.println(getPathsTo("base/path/rename.txt", "rename.txt"));
+    }
 
-        var lastNode = path.substring(path.lastIndexOf("/") + 1);
-        if (!lastNode.contains(".") && !lastNode.contains("/")) {
-            requiredPaths.add(requiredPaths.get(requiredPaths.size() - 1) + destination + "/");
-        }
+    public static List<String> getPathsTo(String source, String desiredObject) {
+        var path = Paths.get(source);
+        var iterator = path.iterator();
+        var requiredPaths = new ArrayList<String>();
+        int i = 0;
+        while (iterator.hasNext()) {
 
+            if (areEqual(iterator.next().toString(), desiredObject)) {
+                var requiredPath = i == 0 ? "/"
+                        : path.subpath(0, i).toString().replace("\\", "/") + "/";
+                requiredPaths.add(requiredPath);
+            }
+
+            i++;
+        }
         return requiredPaths;
+    }
+
+    private static boolean areEqual(String s1, String s2) {
+        if (s1.contains(".") && s2.contains(".")
+                || !s1.contains(".") && !s2.contains(".")) {
+            return s1.equals(s2);
+        } else {
+            return s1.contains(".") ? s1.substring(0, s1.indexOf(".")).equals(s2)
+                    : s2.substring(0, s2.indexOf(".")).equals(s1);
+        }
     }
 }

@@ -5,12 +5,9 @@ import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.model.User;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
 import java.util.List;
 
 public interface FileSystemObjectRepository {
-
-    void saveFile(String path, String contentType, InputStream inputStream);
 
     void saveFolder(User user, String path, String name);
 
@@ -20,7 +17,7 @@ public interface FileSystemObjectRepository {
 
     List<FileSystemObject> findAllInFirstLevel(User user, String path);
 
-    List<String> findAllPathsByItemName(User user, String name);
+    List<String> findAllPathsToItem(User user, String itemName);
 
     void update(User user, String path, String oldName, String newName);
 

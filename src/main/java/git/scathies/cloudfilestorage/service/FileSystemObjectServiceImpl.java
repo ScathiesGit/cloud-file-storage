@@ -16,10 +16,6 @@ public class FileSystemObjectServiceImpl implements FileSystemObjectService {
 
     private final FileSystemObjectRepository fileSystemObjectRepository;
 
-    public void createFile(String path, String contentType, InputStream inputStream) {
-        fileSystemObjectRepository.saveFile(path, contentType, inputStream);
-    }
-
     public void remove(User user, String path, String name) {
         fileSystemObjectRepository.delete(user, path, name);
     }

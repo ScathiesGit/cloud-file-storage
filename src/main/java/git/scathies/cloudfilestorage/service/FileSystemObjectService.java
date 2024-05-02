@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface FileSystemObjectService {
 
-    void createFile(String path, String contentType, InputStream inputStream);
-
     void remove(User user, String path, String name);
 
     void createFolder(User user, String path, String name);

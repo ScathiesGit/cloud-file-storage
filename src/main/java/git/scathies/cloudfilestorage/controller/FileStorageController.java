@@ -49,7 +49,7 @@ public class FileStorageController {
     }
 
     private void initModel(User user, String path, Model model) {
-        model.addAttribute("content", path == null
+        model.addAttribute("content", path == null || path.equals("/")
                 ? searchFileSystemObjectService.getRootFolderContent(user)
                 : searchFileSystemObjectService.getFolderContent(user, path));
         if (path != null && !path.isEmpty()) {

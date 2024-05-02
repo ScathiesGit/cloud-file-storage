@@ -5,6 +5,7 @@ import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.model.User;
 import git.scathies.cloudfilestorage.util.PathUtil;
 import io.minio.*;
+import io.minio.messages.Contents;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +41,6 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     private final String folderContentType = "octet/binary-stream";
 
     @Override
-    public void saveFile(String path, String contentType, InputStream inputStream) {
-        putObject(path, contentType, inputStream);
-    }
-
-    @Override
     public void saveFolder(User user, String path, String name) {
         putObject(rootFolderTemplate.formatted(user.getId()) + path + name + "/", folderContentType,
                 new ByteArrayInputStream(new byte[]{}));
@@ -71,12 +67,12 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     }
 
     @Override
-    public List<String> findAllPathsByItemName(User user, String name) {
+    public List<String> findAllPathsToItem(User user, String itemName) {
         return find(getUserRootFolderPath(user), true).stream()
                 .map(this::toFileSystemObject)
-                .filter(fileSystemObject -> PathUtil.isContains(fileSystemObject.getName(), name))
+                .filter(fileSystemObject -> PathUtil.isContains(fileSystemObject.getName(), itemName))
                 .flatMap(fileSystemObject ->
-                        PathUtil.getPathsTo(fileSystemObject.getName(), name).stream())
+                        PathUtil.getPathsTo(fileSystemObject.getName(), itemName).stream())
                 .distinct()
                 .toList();
     }
@@ -107,8 +103,9 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     @Override
     public void delete(User user, String path, String name) {
         var fullPath = getUserRootFolderPath(user) + path + name;
-        if (name.endsWith("/")) {
+        if (fullPath.endsWith("/")) {
             List<DeleteObject> deleteObjects = new ArrayList<>();
+            deleteObjects.add(new DeleteObject(fullPath));
             find(fullPath, true).forEach(
                     item -> deleteObjects.add(new DeleteObject(item.objectName())));
 
@@ -172,10 +169,9 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                         .bucket(bucketName)
                         .objects(uploadObjects)
                         .build());
-
             } else {
                 var file = files.get(0);
-                putObject(basePath + file.getOriginalFilename(), file.getContentType(), file.getInputStream());
+                putObject(basePath + file.getName(), file.getContentType(), file.getInputStream());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -209,7 +205,9 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
         List<Item> items = new ArrayList<>();
         try {
             for (var rawItem : rawItems) {
-                items.add(rawItem.get());
+                if (!rawItem.get().objectName().equals(prefix)) {
+                    items.add(rawItem.get());
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -248,23 +246,23 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     }
 
     private byte[] downloadFolder(User user, String path) {
-        try (var buffer = new ByteArrayOutputStream(); var zip = new ZipOutputStream(buffer)) {
+        try (var buffer = new ByteArrayOutputStream();
+             var zip = new ZipOutputStream(buffer)) {
             find(getUserRootFolderPath(user) + path, true).stream()
                     .map(item -> getObject(item.objectName()))
                     .forEach(resp -> {
                         try {
                             String fileName = resp.object().replace(
                                     getUserRootFolderPath(user) + path, "");
-                            if (!fileName.isEmpty()) {
-                                var entry = new ZipEntry(fileName);
-                                zip.putNextEntry(entry);
-                                zip.write(resp.readAllBytes());
-                                resp.close();
-                            }
+                            var entry = new ZipEntry(fileName);
+                            zip.putNextEntry(entry);
+                            zip.write(resp.readAllBytes());
+                            resp.close();
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     });
+            zip.close();
             return buffer.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);

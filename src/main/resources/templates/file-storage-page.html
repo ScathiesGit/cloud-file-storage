@@ -50,24 +50,21 @@
         <div class="col-9 row row-cols-1">
             <!--            breadcrumbs-->
             <div class="col-12 align-self-center">
-<<<<<<< HEAD
                 <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
-=======
-                <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';"
->>>>>>> 5e5c1efa69bac33f2ed586dbb809944cde02c332
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item" onclick="sendRequest('/')">
-                        <a href="#">главная</a>
-                    </li>
-                    <li th:each="part, iterStat : ${breadcrumb}"
-                        th:classappend="${iterStat.last} ? 'breadcrumb-item active' : 'breadcrumb-item'"
-                        th:attr="aria-current=${iterStat.last ? 'page' : null}">
-                        <a href="#" th:unless="${iterStat.last}" th:text="${part.getKey()}"
-                           th:value="${part.getValue()}"
-                           onclick="sendRequest(this.getAttribute('value'))"></a>
-                        <a th:if="${iterStat.last}" th:text="${part.getKey()}"></a>
-                    </li>
-                </ol>
+
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item" onclick="sendRequest('/')">
+                            <a href="#">главная</a>
+                        </li>
+                        <li th:each="part, iterStat : ${breadcrumb}"
+                            th:classappend="${iterStat.last} ? 'breadcrumb-item active' : 'breadcrumb-item'"
+                            th:attr="aria-current=${iterStat.last ? 'page' : null}">
+                            <a href="#" th:unless="${iterStat.last}" th:text="${part.getKey()}"
+                               th:value="${part.getValue()}"
+                               onclick="sendRequest(this.getAttribute('value'))"></a>
+                            <a th:if="${iterStat.last}" th:text="${part.getKey()}"></a>
+                        </li>
+                    </ol>
                 </nav>
             </div>
 

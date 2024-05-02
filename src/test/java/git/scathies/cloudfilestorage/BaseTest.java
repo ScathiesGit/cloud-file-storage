@@ -1,4 +1,4 @@
-package git.scathies.cloudfilestorage.integration;
+package git.scathies.cloudfilestorage;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -12,7 +12,7 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 @SpringBootTest
 @ActiveProfiles("test")
-public class BaseIntegrationTest {
+public class BaseTest {
 
     public static final MinIOContainer MINIO_CONTAINER = new MinIOContainer(DockerImageName.parse(
             "minio/minio:latest").asCompatibleSubstituteFor("minio/minio"));
