@@ -1,5 +1,9 @@
 package git.scathies.cloudfilestorage.repository;
 
+import git.scathies.cloudfilestorage.exception.DeleteException;
+import git.scathies.cloudfilestorage.exception.DownloadException;
+import git.scathies.cloudfilestorage.exception.FileStorageException;
+import git.scathies.cloudfilestorage.exception.UploadException;
 import git.scathies.cloudfilestorage.model.DownloadObject;
 import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.model.User;
@@ -116,7 +120,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                         try {
                             lazyRemoval.get();
                         } catch (Exception e) {
-                            throw new RuntimeException(e);
+                            throw new DeleteException(e);
                         }
                     });
         } else {
@@ -124,7 +128,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
             restoreFolder(getUserRootFolderPath(user) + path);
         }
     }
-    
+
     @Override
     public DownloadObject download(User user, String path) {
         String name = Paths.get(path).getFileName().toString();
@@ -138,7 +142,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                 content = getObject.readAllBytes();
                 type = getObject.headers().get("Content-Type");
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new DownloadException(e);
             }
         }
         return new DownloadObject(name, content, type);
@@ -147,30 +151,35 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
     @Override
     public void upload(User user, String path, List<MultipartFile> files) {
         var basePath = getUserRootFolderPath(user) + path;
-        try {
-            if (files.size() > 1) {
-                List<SnowballObject> uploadObjects = new ArrayList<>();
-                files.forEach(file -> {
-                    try {
-                        uploadObjects.add(new SnowballObject(
-                                basePath + file.getOriginalFilename(),
-                                file.getInputStream(),
-                                file.getInputStream().available(),
-                                null));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+        if (files.size() > 1) {
+            List<SnowballObject> uploadObjects = new ArrayList<>();
+            files.forEach(file -> {
+                try {
+                    uploadObjects.add(new SnowballObject(
+                            basePath + file.getOriginalFilename(),
+                            file.getInputStream(),
+                            file.getInputStream().available(),
+                            null));
+                } catch (IOException e) {
+                    throw new UploadException(e);
+                }
+            });
+
+            try {
                 minioClient.uploadSnowballObjects(UploadSnowballObjectsArgs.builder()
                         .bucket(bucketName)
                         .objects(uploadObjects)
                         .build());
-            } else {
-                var file = files.get(0);
-                putObject(basePath + file.getOriginalFilename(), file.getContentType(), file.getInputStream());
+            } catch (Exception e) {
+                throw new FileStorageException(e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } else {
+            var file = files.get(0);
+            try {
+                putObject(basePath + file.getOriginalFilename(), file.getContentType(), file.getInputStream());
+            } catch (IOException e) {
+                throw new UploadException(e);
+            }
         }
     }
 
@@ -187,7 +196,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                     .stream(inputStream, inputStream.available(), -1)
                     .build());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new FileStorageException(e);
         }
     }
 
@@ -206,7 +215,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new FileStorageException(e);
         }
         return items;
     }
@@ -222,7 +231,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                             .build())
                     .build());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new FileStorageException(e);
         }
     }
 
@@ -233,7 +242,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                     .object(path)
                     .build());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new FileStorageException(e);
         }
     }
 
@@ -255,13 +264,13 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                             zip.write(resp.readAllBytes());
                             resp.close();
                         } catch (IOException e) {
-                            throw new RuntimeException(e);
+                            throw new DownloadException(e);
                         }
                     });
             zip.close();
             return buffer.toByteArray();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new DownloadException(e);
         }
     }
 
@@ -272,7 +281,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                     .object(path)
                     .build());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new FileStorageException(e);
         }
     }
 
