@@ -5,7 +5,6 @@ import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.model.User;
 import git.scathies.cloudfilestorage.util.PathUtil;
 import io.minio.*;
-import io.minio.messages.Contents;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
@@ -125,10 +124,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
             restoreFolder(getUserRootFolderPath(user) + path);
         }
     }
-
-    public static void main(String[] args) {
-    }
-
+    
     @Override
     public DownloadObject download(User user, String path) {
         String name = Paths.get(path).getFileName().toString();
@@ -171,7 +167,7 @@ public class MinioFileSystemObjectRepository implements FileSystemObjectReposito
                         .build());
             } else {
                 var file = files.get(0);
-                putObject(basePath + file.getName(), file.getContentType(), file.getInputStream());
+                putObject(basePath + file.getOriginalFilename(), file.getContentType(), file.getInputStream());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

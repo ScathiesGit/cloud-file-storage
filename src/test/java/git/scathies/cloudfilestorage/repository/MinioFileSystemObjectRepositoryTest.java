@@ -3,7 +3,10 @@ package git.scathies.cloudfilestorage.repository;
 import git.scathies.cloudfilestorage.BaseTest;
 import git.scathies.cloudfilestorage.model.FileSystemObject;
 import git.scathies.cloudfilestorage.model.User;
-import io.minio.*;
+import io.minio.BucketExistsArgs;
+import io.minio.ListObjectsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,13 +20,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -109,7 +110,7 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var pathToItem2 = "dir1/";
         var nameItem2 = "dir2";
         var mockMultipartFile = new MockMultipartFile(
-                item1, "", "plain/text", new byte[]{});
+                item1, item1, "text/plain", new byte[]{});
 
         fileSystemObjectRepository.upload(mockUser, "", List.of(mockMultipartFile));
         fileSystemObjectRepository.saveFolder(mockUser, pathToItem2, nameItem2);
@@ -133,7 +134,7 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
 
         fileSystemObjectRepository.saveFolder(mockUser, "", baseDir);
         fileSystemObjectRepository.upload(mockUser, baseDir, List.of(
-                new MockMultipartFile(item1, "", "plain/text", new byte[]{})
+                new MockMultipartFile(item1, item1, "text/plain", new byte[]{})
         ));
         fileSystemObjectRepository.saveFolder(mockUser, baseDir, item2);
 
@@ -157,7 +158,7 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var expectedPaths = List.of("path/to/", "path/to/test/dir/",
                 "/", "test/path/dir1/dir2/");
         fileSystemObjectRepository.upload(mockUser, pathToItem1, List.of(new MockMultipartFile(
-                item1, "", "plain/text", new byte[]{}
+                item1, item1, "text/plain", new byte[]{}
         )));
         fileSystemObjectRepository.saveFolder(mockUser, pathToItem2, item2);
 
@@ -184,7 +185,7 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var pathToItem2 = "dir1/";
         var nameItem2 = "dir2";
         fileSystemObjectRepository.upload(mockUser, oldPath, List.of(
-                new MockMultipartFile(item1, "", "plain/text", new byte[]{})));
+                new MockMultipartFile(item1, item1, "text/plain", new byte[]{})));
         fileSystemObjectRepository.saveFolder(mockUser, oldPath + pathToItem2, nameItem2);
 
         fileSystemObjectRepository.update(mockUser, basePath, oldName, newName);
@@ -206,7 +207,7 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var fileName = "text.txt";
         var newFileName = "rename.txt";
         fileSystemObjectRepository.upload(mockUser, basePath, List.of(
-                new MockMultipartFile(fileName, "", "plain/text", new byte[]{})
+                new MockMultipartFile(fileName, fileName, "text/plain", new byte[]{})
         ));
 
         fileSystemObjectRepository.update(mockUser, basePath, fileName, newFileName);
@@ -230,10 +231,10 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         fileSystemObjectRepository.saveFolder(mockUser, "", "base-folder");
         fileSystemObjectRepository.saveFolder(mockUser, baseFolder, "delete");
         fileSystemObjectRepository.upload(mockUser, pathToFile1, List.of(new MockMultipartFile(
-                filename1, "", "text/plain", new byte[]{}
+                filename1, filename1, "text/plain", new byte[]{}
         )));
         fileSystemObjectRepository.upload(mockUser, pathToFile2, List.of(new MockMultipartFile(
-                filename2, "", "text/plain", new byte[]{}
+                filename2, filename2, "text/plain", new byte[]{}
         )));
 
         fileSystemObjectRepository.delete(mockUser, baseFolder, folderForDelete);
@@ -252,7 +253,7 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var fileNameRemove = "remove.txt";
         fileSystemObjectRepository.saveFolder(mockUser, baseFolder, "folder");
         fileSystemObjectRepository.upload(mockUser, baseFolder + "folder/", List.of(new MockMultipartFile(
-                fileNameRemove, "", "plain/text", new byte[]{}
+                fileNameRemove, fileNameRemove, "text/plain", new byte[]{}
         )));
 
         fileSystemObjectRepository.delete(mockUser, baseFolder + "folder/", fileNameRemove);
@@ -269,7 +270,7 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var path = "path/folder/";
         var fileName = "test.txt";
         fileSystemObjectRepository.upload(mockUser, path, List.of(new MockMultipartFile(
-                fileName, "", "plain/text", baos.toByteArray()
+                fileName, fileName, "text/plain", baos.toByteArray()
         )));
 
         var downloaded = fileSystemObjectRepository.download(mockUser, path + fileName);
@@ -293,9 +294,9 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var baos2 = new ByteArrayOutputStream();
         baos2.write("text for file 2".getBytes(StandardCharsets.UTF_8));
         fileSystemObjectRepository.upload(mockUser, pathToDownloadFolder + folderNameForDownload + "/", List.of(
-                new MockMultipartFile(fileName1, "", "plain/text", baos1.toByteArray())));
+                new MockMultipartFile(fileName1, fileName1, "text/plain", baos1.toByteArray())));
         fileSystemObjectRepository.upload(mockUser, pathToDownloadFolder + folderNameForDownload + "/", List.of(
-                new MockMultipartFile(fileName2, "", "plain/text", baos2.toByteArray())));
+                new MockMultipartFile(fileName2, fileName2, "text/plain", baos2.toByteArray())));
 
         var downloaded = fileSystemObjectRepository.download(mockUser,
                 pathToDownloadFolder + folderNameForDownload + "/");
@@ -330,9 +331,9 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var baseFolder = "base/";
 
         fileSystemObjectRepository.upload(mockUser, baseFolder, List.of(
-                new MockMultipartFile(name1, "", "plain/text", baos1.toByteArray())));
+                new MockMultipartFile(name1, name1, "text/plain", baos1.toByteArray())));
         fileSystemObjectRepository.upload(mockUser, baseFolder, List.of(
-                new MockMultipartFile(name2, "", "plain/text", baos2.toByteArray())));
+                new MockMultipartFile(name2, name2, "text/plain", baos2.toByteArray())));
 
         var file1 = fileSystemObjectRepository.download(mockUser, baseFolder + name1);
         var file2 = fileSystemObjectRepository.download(mockUser, baseFolder + name2);

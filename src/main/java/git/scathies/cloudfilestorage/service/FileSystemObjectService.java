@@ -4,7 +4,6 @@ import git.scathies.cloudfilestorage.model.DownloadObject;
 import git.scathies.cloudfilestorage.model.User;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
 import java.util.List;
 
 public interface FileSystemObjectService {

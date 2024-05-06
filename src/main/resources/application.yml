@@ -9,22 +9,27 @@ spring:
       max-request-size: 1024MB
 
   datasource:
-    url: jdbc:mysql://localhost:3306/cloud_file_storage
-    username: mysql
+    url: jdbc:mysql://mysql:3306/cloud_file_storage
+    username: root
     password: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   liquibase:
     change-log: classpath:./db/changelog/db.changelog-master.yml
+  data:
+    redis:
+      host: redis
+      port: 6379
 
 file-storage:
   username: admin
   password: password
-  endpoint: http:/localhost:9000
-  bucket-name: dev-cfs
+  endpoint: http://minio:9000
+  bucket-name: cfs
   root-folder-template: user-%s-files/
 
 server:
   servlet:
     session:
       timeout: 1800
+  port: 80

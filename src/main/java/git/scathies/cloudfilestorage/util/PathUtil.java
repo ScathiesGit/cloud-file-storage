@@ -6,17 +6,13 @@ import java.util.List;
 
 public class PathUtil {
 
-    public static boolean isContains(String path, String node) {
+    public static boolean isContains(String path, String target) {
         for (var pathPart : path.split("/")) {
-            if (areEqual(pathPart, node)) {
+            if (areEqual(pathPart, target)) {
                 return true;
             }
         }
         return false;
-    }
-
-    public static void main(String[] args) {
-        System.out.println(getPathsTo("base/path/rename.txt", "rename.txt"));
     }
 
     public static List<String> getPathsTo(String source, String desiredObject) {
@@ -27,8 +23,8 @@ public class PathUtil {
         while (iterator.hasNext()) {
 
             if (areEqual(iterator.next().toString(), desiredObject)) {
-                var requiredPath = i == 0 ? "/"
-                        : path.subpath(0, i).toString().replace("\\", "/") + "/";
+                var requiredPath = i != 0 ? path.subpath(0, i).toString().replace("\\", "/") + "/"
+                        : "/";
                 requiredPaths.add(requiredPath);
             }
 

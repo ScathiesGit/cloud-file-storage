@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset scathies:31.01.2024.create-table-users
+--changeset scathies:1.create-table-users
 CREATE TABLE users
 (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

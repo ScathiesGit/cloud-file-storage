@@ -12,7 +12,7 @@
 
 	<groupId>git.scathies</groupId>
 	<artifactId>cloud-file-storage</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>cloud-file-storage</name>
 	<description>cloud-file-storage</description>
 

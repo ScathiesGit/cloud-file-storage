@@ -1,5 +1,5 @@
 function rename(oldName, path) {
-    const url = 'http://localhost:8080/';
+    const url = 'http://localhost/';
 
     if (path === null) {
         path = '';
@@ -38,7 +38,7 @@ function rename(oldName, path) {
 }
 
 function remove(name, path) {
-    const url = 'http://localhost:8080/';
+    const url = 'http://localhost/';
 
     if (path === null) {
         path = '';
