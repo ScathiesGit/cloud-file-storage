@@ -2,7 +2,7 @@ package git.scathies.cloudfilestorage.integration;
 
 import git.scathies.cloudfilestorage.BaseTest;
 import git.scathies.cloudfilestorage.model.User;
-import git.scathies.cloudfilestorage.repository.FileSystemObjectRepository;
+import git.scathies.cloudfilestorage.repository.StorageItemRepository;
 import io.minio.MinioClient;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +18,7 @@ public class DownloadControllerTest extends BaseTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private FileSystemObjectRepository fileSystemObjectRepository;
+    private StorageItemRepository storageItemRepository;
 
     @Value("${file-storage.bucket-name}")
     private String bucketName;

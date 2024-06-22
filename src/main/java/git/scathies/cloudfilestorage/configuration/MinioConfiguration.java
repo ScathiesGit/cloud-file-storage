@@ -1,31 +1,32 @@
 package git.scathies.cloudfilestorage.configuration;
 
+import git.scathies.cloudfilestorage.configuration.properties.FileStorageConfigProperties;
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@RequiredArgsConstructor
 public class MinioConfiguration {
 
-    @Bean(name = "minioClient")
-    public MinioClient minioClient(@Value("${file-storage.username}") String username,
-                                   @Value("${file-storage.password}") String password,
-                                   @Value("${file-storage.endpoint}") String endpoint,
-                                   @Value("${file-storage.bucket-name}") String bucketName) {
+    private final FileStorageConfigProperties configProps;
+
+    @Bean
+    public MinioClient minioClient() {
         var minioClient = MinioClient.builder()
-                .endpoint(endpoint)
-                .credentials(username, password)
+                .endpoint(configProps.getEndpoint())
+                .credentials(configProps.getUsername(), configProps.getPassword())
                 .build();
 
         try {
             if (!minioClient.bucketExists(BucketExistsArgs.builder()
-                    .bucket(bucketName)
+                    .bucket(configProps.getBucketName())
                     .build())) {
                 minioClient.makeBucket(MakeBucketArgs.builder()
-                        .bucket(bucketName)
+                        .bucket(configProps.getBucketName())
                         .build());
             }
         } catch (Exception e) {
@@ -34,6 +35,4 @@ public class MinioConfiguration {
 
         return minioClient;
     }
-
-
 }

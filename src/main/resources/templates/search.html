@@ -26,12 +26,13 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="name : ${found}">
-                    <th scope="row" th:text="${name.isEmpty() ? '/' : name}">
+                <tr th:each="resp : ${found}">
+                    <th scope="row" th:text="${resp.path != null ? resp.path + resp.name : resp.name}">
                     </th>
                     <th scope="row">
                         <form action="/" method="get">
-                            <input type="hidden" name="path" th:value="${name}">
+                            <input type="hidden" name="path" th:value="${resp.path}">
+                            <input type="hidden" name="name" th:value="${resp.name}">
                             <button class="btn btn-sm btn-outline-dark" type="submit">перейти</button>
                         </form>
                     </th>

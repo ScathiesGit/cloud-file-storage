@@ -1,18 +1,31 @@
-function rename(oldName, path) {
+function rename(oldName, path, isFolder, parentFolderPath, parentFolderName) {
     const url = 'http://localhost/';
 
-    if (path === null) {
-        path = '';
-    }
 
     const data = new URLSearchParams();
     data.append('newName', document.getElementById(oldName).value);
     data.append('oldName', oldName);
-    data.append('path', path);
+    data.append('isFolder', isFolder)
+    data.append('pathToDirectory', path);
 
+    if (parentFolderPath !== null) {
+
+        data.append('path', parentFolderPath);
+    }
+
+    if (parentFolderName !== null) {
+
+        data.append('name', parentFolderName);
+    }
+
+    console.log('Storage item name for rename: ' + oldName)
+    console.log('Path to storage item: ' + path)
+    console.log('is Folder: ' + isFolder)
+    console.log('Current folder: ' + parentFolderPath)
+    console.log('Name parent folder for current folder: ' + parentFolderName)
 
     const options = {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         },
@@ -37,21 +50,23 @@ function rename(oldName, path) {
         });
 }
 
-function remove(name, path) {
+function remove(removalItemName, path, isFolder, name) {
     const url = 'http://localhost/';
-
-    if (path === null) {
-        path = '';
-    }
 
     const data = new URLSearchParams();
 
-    data.append('name', name);
-    data.append('path', path);
+    if (name !== null) {
+        data.append('name', name);
+        data.append('parentFolder', name);
+    }
 
+    if (path !== null) {
+        data.append('path', path);
+    }
 
-    console.log(data.get('name'));
-    console.log(data.get('path'));
+    data.append('isFolder', isFolder)
+    data.append('removalItemName', removalItemName)
+
 
     const options = {
         method: 'DELETE',

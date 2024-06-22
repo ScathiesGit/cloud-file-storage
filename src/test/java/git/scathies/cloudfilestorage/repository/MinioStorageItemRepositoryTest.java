@@ -1,7 +1,7 @@
 package git.scathies.cloudfilestorage.repository;
 
 import git.scathies.cloudfilestorage.BaseTest;
-import git.scathies.cloudfilestorage.model.FileSystemObject;
+import git.scathies.cloudfilestorage.model.StorageItem;
 import git.scathies.cloudfilestorage.model.User;
 import io.minio.BucketExistsArgs;
 import io.minio.ListObjectsArgs;
@@ -33,10 +33,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 @Testcontainers
 @ActiveProfiles("test")
 @SpringBootTest
-class MinioFileSystemObjectRepositoryTest extends BaseTest {
+class MinioStorageItemRepositoryTest extends BaseTest {
 
     @Autowired
-    private FileSystemObjectRepository fileSystemObjectRepository;
+    private StorageItemRepository storageItemRepository;
 
     @Autowired
     private MinioClient minioClient;
@@ -60,8 +60,8 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
                     .build());
         }
 
-        fileSystemObjectRepository.delete(mockUser, "", "");
-        var list = fileSystemObjectRepository.findAllInRootFolder(mockUser);
+        storageItemRepository.delete(mockUser, "", "");
+        var list = storageItemRepository.findAllInRootFolder(mockUser);
         assertThat(list).hasSize(0);
     }
 
@@ -70,9 +70,9 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var path = "dir1/dir2/";
         var name = "desired";
 
-        fileSystemObjectRepository.saveFolder(mockUser, path, name);
+        storageItemRepository.saveFolder(path);
 
-        var paths = fileSystemObjectRepository.findAllPathsToItem(mockUser, name);
+        var paths = storageItemRepository.findAllPathsToItem(mockUser, name);
         assertAll(
                 () -> assertThat(paths).hasSize(1),
                 () -> assertThat(paths).contains(path)
@@ -85,7 +85,7 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var name = "dir*+-=?./.";
 
         assertThatThrownBy(
-                () -> fileSystemObjectRepository.saveFolder(mockUser, path, name)
+                () -> storageItemRepository.saveFolder(path)
         ).isInstanceOf(RuntimeException.class);
     }
 
@@ -94,7 +94,7 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
     void whenSaveRootFolderThenWillCreated() {
         var expectedRootFolder = rootFolderTemplate.formatted(mockUser.getId());
 
-        fileSystemObjectRepository.saveRootFolder(mockUser);
+        storageItemRepository.saveRootFolder(mockUser);
 
         var rawItems = minioClient.listObjects(ListObjectsArgs.builder()
                 .bucket(bucketName)
@@ -112,11 +112,11 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var mockMultipartFile = new MockMultipartFile(
                 item1, item1, "text/plain", new byte[]{});
 
-        fileSystemObjectRepository.upload(mockUser, "", List.of(mockMultipartFile));
-        fileSystemObjectRepository.saveFolder(mockUser, pathToItem2, nameItem2);
+        storageItemRepository.upload("", List.of(mockMultipartFile));
+        storageItemRepository.saveFolder(pathToItem2);
 
-        var files = fileSystemObjectRepository.findAllInRootFolder(mockUser).stream()
-                .map(FileSystemObject::getName)
+        var files = storageItemRepository.findAllInRootFolder(mockUser).stream()
+                .map(StorageItem::getName)
                 .toList();
         assertAll(
                 () -> assertThat(files).hasSize(2),
@@ -132,14 +132,14 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var item2 = "dir1";
         var pathToItem2 = baseDir + item2 + "/";
 
-        fileSystemObjectRepository.saveFolder(mockUser, "", baseDir);
-        fileSystemObjectRepository.upload(mockUser, baseDir, List.of(
+        storageItemRepository.saveFolder("");
+        storageItemRepository.upload(baseDir, List.of(
                 new MockMultipartFile(item1, item1, "text/plain", new byte[]{})
         ));
-        fileSystemObjectRepository.saveFolder(mockUser, baseDir, item2);
+        storageItemRepository.saveFolder(baseDir);
 
-        var files = fileSystemObjectRepository.findAllInFirstLevel(mockUser, baseDir).stream()
-                .map(FileSystemObject::getName)
+        var files = storageItemRepository.findAllInFirstLevel(baseDir).stream()
+                .map(StorageItem::getName)
                 .toList();
         System.out.println();
         assertAll(
@@ -157,19 +157,19 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var item2 = "folder";
         var expectedPaths = List.of("path/to/", "path/to/test/dir/",
                 "/", "test/path/dir1/dir2/");
-        fileSystemObjectRepository.upload(mockUser, pathToItem1, List.of(new MockMultipartFile(
+        storageItemRepository.upload(pathToItem1, List.of(new MockMultipartFile(
                 item1, item1, "text/plain", new byte[]{}
         )));
-        fileSystemObjectRepository.saveFolder(mockUser, pathToItem2, item2);
+        storageItemRepository.saveFolder(pathToItem2);
 
-        var actualPaths = fileSystemObjectRepository.findAllPathsToItem(mockUser, itemName);
+        var actualPaths = storageItemRepository.findAllPathsToItem(mockUser, itemName);
 
         assertThat(actualPaths).isEqualTo(expectedPaths);
     }
 
     @Test
     void givenNotExistItemWhenFindAllPathsToItemThenReturnEmptyList() {
-        var found = fileSystemObjectRepository.findAllPathsToItem(mockUser, "test-item");
+        var found = storageItemRepository.findAllPathsToItem(mockUser, "test-item");
 
         assertThat(found).hasSize(0);
     }
@@ -184,20 +184,20 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var item1 = "text.txt";
         var pathToItem2 = "dir1/";
         var nameItem2 = "dir2";
-        fileSystemObjectRepository.upload(mockUser, oldPath, List.of(
+        storageItemRepository.upload(oldPath, List.of(
                 new MockMultipartFile(item1, item1, "text/plain", new byte[]{})));
-        fileSystemObjectRepository.saveFolder(mockUser, oldPath + pathToItem2, nameItem2);
+        storageItemRepository.saveFolder(oldPath + pathToItem2);
 
-        fileSystemObjectRepository.update(mockUser, basePath, oldName, newName);
+        storageItemRepository.update(mockUser, basePath, oldName, newName);
 
-        var oldItems = fileSystemObjectRepository.findAllInFirstLevel(mockUser, oldPath);
-        var newItems = fileSystemObjectRepository.findAllInFirstLevel(mockUser, newPath);
+        var oldItems = storageItemRepository.findAllInFirstLevel(oldPath);
+        var newItems = storageItemRepository.findAllInFirstLevel(newPath);
         assertAll(
                 () -> assertThat(oldItems).hasSize(0),
                 () -> assertThat(newItems).hasSize(2),
                 () -> assertThat(newItems)
-                        .contains(new FileSystemObject(newPath + item1, 0L, null))
-                        .contains(new FileSystemObject(newPath + pathToItem2, 0L, null))
+                        .contains(new StorageItem(newPath + item1, 0L, null))
+                        .contains(new StorageItem(newPath + pathToItem2, 0L, null))
         );
     }
 
@@ -206,14 +206,14 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var basePath = "base/path/";
         var fileName = "text.txt";
         var newFileName = "rename.txt";
-        fileSystemObjectRepository.upload(mockUser, basePath, List.of(
+        storageItemRepository.upload(basePath, List.of(
                 new MockMultipartFile(fileName, fileName, "text/plain", new byte[]{})
         ));
 
-        fileSystemObjectRepository.update(mockUser, basePath, fileName, newFileName);
+        storageItemRepository.update(mockUser, basePath, fileName, newFileName);
 
-        var oldItem = fileSystemObjectRepository.findAllPathsToItem(mockUser, fileName);
-        var updatedItem = fileSystemObjectRepository.findAllPathsToItem(mockUser, newFileName);
+        var oldItem = storageItemRepository.findAllPathsToItem(mockUser, fileName);
+        var updatedItem = storageItemRepository.findAllPathsToItem(mockUser, newFileName);
         assertAll(
                 () -> assertThat(oldItem).hasSize(0),
                 () -> assertThat(updatedItem).hasSize(1)
@@ -228,19 +228,19 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var filename1 = "file1.txt";
         var pathToFile2 = baseFolder + folderForDelete + "dir/";
         var filename2 = "file2.txt";
-        fileSystemObjectRepository.saveFolder(mockUser, "", "base-folder");
-        fileSystemObjectRepository.saveFolder(mockUser, baseFolder, "delete");
-        fileSystemObjectRepository.upload(mockUser, pathToFile1, List.of(new MockMultipartFile(
+        storageItemRepository.saveFolder("");
+        storageItemRepository.saveFolder(baseFolder);
+        storageItemRepository.upload(pathToFile1, List.of(new MockMultipartFile(
                 filename1, filename1, "text/plain", new byte[]{}
         )));
-        fileSystemObjectRepository.upload(mockUser, pathToFile2, List.of(new MockMultipartFile(
+        storageItemRepository.upload(pathToFile2, List.of(new MockMultipartFile(
                 filename2, filename2, "text/plain", new byte[]{}
         )));
 
-        fileSystemObjectRepository.delete(mockUser, baseFolder, folderForDelete);
+        storageItemRepository.delete(mockUser, baseFolder, folderForDelete);
 
-        var rootContent = fileSystemObjectRepository.findAllInRootFolder(mockUser);
-        var baseFolderContent = fileSystemObjectRepository.findAllInFirstLevel(mockUser, "base-folder/");
+        var rootContent = storageItemRepository.findAllInRootFolder(mockUser);
+        var baseFolderContent = storageItemRepository.findAllInFirstLevel("base-folder/");
         assertAll(
                 () -> assertThat(rootContent).hasSize(1),
                 () -> assertThat(baseFolderContent).hasSize(0)
@@ -251,14 +251,14 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
     void givenFileNameWhenDeleteThenDeleteFile() {
         var baseFolder = "base/";
         var fileNameRemove = "remove.txt";
-        fileSystemObjectRepository.saveFolder(mockUser, baseFolder, "folder");
-        fileSystemObjectRepository.upload(mockUser, baseFolder + "folder/", List.of(new MockMultipartFile(
+        storageItemRepository.saveFolder(baseFolder);
+        storageItemRepository.upload(baseFolder + "folder/", List.of(new MockMultipartFile(
                 fileNameRemove, fileNameRemove, "text/plain", new byte[]{}
         )));
 
-        fileSystemObjectRepository.delete(mockUser, baseFolder + "folder/", fileNameRemove);
+        storageItemRepository.delete(mockUser, baseFolder + "folder/", fileNameRemove);
 
-        var foundItem = fileSystemObjectRepository.findAllPathsToItem(mockUser, fileNameRemove);
+        var foundItem = storageItemRepository.findAllPathsToItem(mockUser, fileNameRemove);
         assertThat(foundItem).isEmpty();
     }
 
@@ -269,11 +269,11 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         baos.write("string for test".getBytes(StandardCharsets.UTF_8));
         var path = "path/folder/";
         var fileName = "test.txt";
-        fileSystemObjectRepository.upload(mockUser, path, List.of(new MockMultipartFile(
+        storageItemRepository.upload(path, List.of(new MockMultipartFile(
                 fileName, fileName, "text/plain", baos.toByteArray()
         )));
 
-        var downloaded = fileSystemObjectRepository.download(mockUser, path + fileName);
+        var downloaded = storageItemRepository.download(path + fileName, );
         var contentAsBytes = downloaded.content();
         assertAll(
                 () -> assertThat(contentAsBytes).isEqualTo(baos.toByteArray()),
@@ -288,18 +288,18 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         var folderNameForDownload = "download";
         var fileName1 = "test1.txt";
         var fileName2 = "test2.txt";
-        fileSystemObjectRepository.saveFolder(mockUser, pathToDownloadFolder, folderNameForDownload);
+        storageItemRepository.saveFolder(pathToDownloadFolder);
         var baos1 = new ByteArrayOutputStream();
         baos1.write("text for file 1".getBytes(StandardCharsets.UTF_8));
         var baos2 = new ByteArrayOutputStream();
         baos2.write("text for file 2".getBytes(StandardCharsets.UTF_8));
-        fileSystemObjectRepository.upload(mockUser, pathToDownloadFolder + folderNameForDownload + "/", List.of(
+        storageItemRepository.upload(pathToDownloadFolder + folderNameForDownload + "/", List.of(
                 new MockMultipartFile(fileName1, fileName1, "text/plain", baos1.toByteArray())));
-        fileSystemObjectRepository.upload(mockUser, pathToDownloadFolder + folderNameForDownload + "/", List.of(
+        storageItemRepository.upload(pathToDownloadFolder + folderNameForDownload + "/", List.of(
                 new MockMultipartFile(fileName2, fileName2, "text/plain", baos2.toByteArray())));
 
-        var downloaded = fileSystemObjectRepository.download(mockUser,
-                pathToDownloadFolder + folderNameForDownload + "/");
+        var downloaded = storageItemRepository.download(
+                pathToDownloadFolder + folderNameForDownload + "/", );
 
         Map<String, byte[]> contentByFileName = new HashMap<>();
         try (var bais = new ByteArrayInputStream(downloaded.content());
@@ -330,13 +330,13 @@ class MinioFileSystemObjectRepositoryTest extends BaseTest {
         baos2.write("test2".getBytes(StandardCharsets.UTF_8));
         var baseFolder = "base/";
 
-        fileSystemObjectRepository.upload(mockUser, baseFolder, List.of(
+        storageItemRepository.upload(baseFolder, List.of(
                 new MockMultipartFile(name1, name1, "text/plain", baos1.toByteArray())));
-        fileSystemObjectRepository.upload(mockUser, baseFolder, List.of(
+        storageItemRepository.upload(baseFolder, List.of(
                 new MockMultipartFile(name2, name2, "text/plain", baos2.toByteArray())));
 
-        var file1 = fileSystemObjectRepository.download(mockUser, baseFolder + name1);
-        var file2 = fileSystemObjectRepository.download(mockUser, baseFolder + name2);
+        var file1 = storageItemRepository.download(baseFolder + name1, );
+        var file2 = storageItemRepository.download(baseFolder + name2, );
         assertAll(
                 () -> assertThat(file1.name()).isEqualTo(name1),
                 () -> assertThat(file1.content()).isEqualTo(baos1.toByteArray()),

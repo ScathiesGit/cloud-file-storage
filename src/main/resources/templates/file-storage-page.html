@@ -24,7 +24,8 @@
             <div class="col">
                 <form method="post" action="/" enctype="multipart/form-data">
                     <input type="file" name="files">
-                    <input type="hidden" name="path" th:value="${path}">
+                    <input type="hidden" name="path" th:value="${path}" th:if="${path != null}">
+                    <input type="hidden" name="name" th:value="${folder}" th:if="${folder != null}">
                     <button type="submit" class="btn btn-primary mb-2">Загрузить файл</button>
                 </form>
             </div>
@@ -32,14 +33,17 @@
                 <form method="post" action="/" enctype="multipart/form-data">
                     <div class="input-group">
                         <input type="file" name="files" webkitdirectory>
-                        <input type="hidden" name="path" th:value="${path}">
+                        <input type="hidden" name="path" th:value="${path}" th:if="${path != null}">
+                        <input type="hidden" name="name" th:value="${folder}" th:if="${folder != null}">
                         <button type="submit" class="btn btn-primary mb-2">Загрузить папку</button>
                     </div>
                 </form>
             </div>
             <div class="col">
                 <form method="post" action="/create">
-                    <input type="text" name="name" placeholder="имя папки">
+                    <input type="text" name="newFolderName" placeholder="имя папки">
+                    <input type="hidden" name="parentFolder" th:value="${folder}">
+                    <input type="hidden" name="name" th:value="${folder}">
                     <input type="hidden" name="path" th:value="${path}">
                     <button type="submit" class="btn btn-primary mb-2">Создать папку</button>
                 </form>
@@ -51,18 +55,18 @@
             <!--            breadcrumbs-->
             <div class="col-12 align-self-center">
                 <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
-
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item" onclick="sendRequest('/')">
+                        <li class="breadcrumb-item" onclick="sendRequest('/', '')">
                             <a href="#">главная</a>
                         </li>
                         <li th:each="part, iterStat : ${breadcrumb}"
                             th:classappend="${iterStat.last} ? 'breadcrumb-item active' : 'breadcrumb-item'"
-                            th:attr="aria-current=${iterStat.last ? 'page' : null}">
-                            <a href="#" th:unless="${iterStat.last}" th:text="${part.getKey()}"
-                               th:value="${part.getValue()}"
-                               onclick="sendRequest(this.getAttribute('value'))"></a>
-                            <a th:if="${iterStat.last}" th:text="${part.getKey()}"></a>
+                            th:attr="aria-current=${iterStat.last ? 'page' : null}"
+                            th:data-path="${part.value}">
+                            <a href="#" th:unless="${iterStat.last}" th:text="${part.key}"
+                               th:value="${part.value}" th:data-folderName="${part.key}"
+                               onclick="sendRequest(this.getAttribute('value'), this.getAttribute('data-folderName'))"></a>
+                            <a th:if="${iterStat.last}" th:text="${part.key}"></a>
                         </li>
                     </ol>
                 </nav>
@@ -79,37 +83,71 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="name: ${content}" th:if="${not name.isEmpty()}">
-                        <th scope="row" th:if="${not name.isEmpty() && not name.endsWith('/')}" th:text="${name}">
+                    <tr th:each="item: ${content}">
+                        <th scope="row" th:if="${not item.isFolder()}" th:text="${item.name}">
                             <img th:src="@{/image/file_img.png}" alt="Файл" style="width: 30px; height: 30px;">
                         </th>
-                        <th scope="row" th:if="${not name.isEmpty() && name.endsWith('/')}">
+                        <th scope="row" th:if="${item.isFolder()}">
                             <form action="/" method="get">
-                                <a th:href="'/?path=' + (${path != null ? path + name : name})"
-                                   th:text="${name.substring(0, name.length() - 1)}">
+                                <input type="hidden" name="isFolder" value="true">
+                                <a th:href="'/?path=' + (${item.path})
+                                + '&name=' + ${item.name}"
+                                   th:text="${item.name}">
                                     <img th:src="@{/image/folder_img.png}" alt="Папка"
                                          style="width: 30px; height: 30px;">
                                 </a>
                             </form>
                         </th>
+
+                        <!--                        rename -->
                         <td>
-                            <input th:id="${name}" type="text" name="newName">
-                            <button th:data-oldName="${name}" th:data-path="${path}"
-                                    onclick="rename(this.getAttribute('data-oldName'), this.getAttribute('data-path'))"
-                                    class="btn btn-sm btn-outline-dark" type="button">
+                            <input th:id="${item.name}" type="text" name="newName">
+                            <input type="hidden" name="isFolder" th:value="${item.isFolder()}">
+                            <button class="btn btn-sm btn-outline-dark" type="button"
+
+                                    th:data-oldName="${item.name}"
+                                    th:data-path="${item.path}"
+                                    th:data-isFolder="${item.isFolder}"
+
+                                    th:data-parentFolderPath="${path}"
+                                    th:data-parentFolderName="${folder}"
+
+                                    onclick="rename(
+                                    this.getAttribute('data-oldName'),
+                                    this.getAttribute('data-path'),
+                                    this.getAttribute('data-isFolder'),
+                                    this.getAttribute('data-parentFolderPath'),
+                                    this.getAttribute('data-parentFolderName')
+                                    )"
+                            >
                                 >
                             </button>
                         </td>
+
+                        <!--                        download -->
                         <td>
                             <form method="get" action="/download">
-                                <input type="hidden" name="path" th:value="${path == null ? name : path + name}">
+                                <input type="hidden" name="path" th:value="${item.path}">
+                                <input type="hidden" name="name" th:value="${item.name}">
+                                <input type="hidden" name="isFolder" th:value="${item.isFolder}">
                                 <button class="btn btn-sm btn-outline-dark" type="submit">></button>
                             </form>
                         </td>
+
+                        <!--                        remove -->
                         <td>
-                            <button th:data-name="${name}" th:data-path="${path != null ? path : ''}"
-                                    onclick="remove(this.getAttribute('data-name'), this.getAttribute('data-path'))"
-                                    class="btn btn-sm btn-outline-danger" type="button">
+                            <button class="btn btn-sm btn-outline-danger" type="button"
+
+                                    th:data-removeItem="${item.name}"
+                                    th:data-path="${path}"
+                                    th:data-isFolder="${item.isFolder()}"
+                                    th:data-name="${folder}"
+
+                                    onclick="remove(this.getAttribute('data-removeItem'),
+                                    this.getAttribute('data-path'),
+                                    this.getAttribute('data-isFolder'),
+                                    this.getAttribute('data-name'))"
+                            >
                                 x
                             </button>
                         </td>

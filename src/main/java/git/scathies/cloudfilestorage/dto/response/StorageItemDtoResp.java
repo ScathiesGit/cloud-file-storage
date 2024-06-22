@@ -1,19 +1,16 @@
-package git.scathies.cloudfilestorage.model;
+package git.scathies.cloudfilestorage.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.Map;
-
 @Data
 @AllArgsConstructor
 @Builder
-public class FileSystemObject {
+public class StorageItemDtoResp {
 
+    private String path;
     private String name;
-
     private Long size;
-
-    private Map<String, String> userMetadata;
+    private boolean isFolder;
 }

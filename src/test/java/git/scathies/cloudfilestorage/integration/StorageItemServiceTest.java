@@ -1,8 +1,8 @@
 package git.scathies.cloudfilestorage.integration;
 
 import git.scathies.cloudfilestorage.BaseTest;
-import git.scathies.cloudfilestorage.repository.FileSystemObjectRepository;
-import git.scathies.cloudfilestorage.service.FileSystemObjectService;
+import git.scathies.cloudfilestorage.repository.StorageItemRepository;
+import git.scathies.cloudfilestorage.service.StorageItemService;
 import io.minio.MinioClient;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,13 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 @Disabled
-public class FileSystemObjectServiceTest extends BaseTest {
+public class StorageItemServiceTest extends BaseTest {
 
     @Autowired
-    private FileSystemObjectService fileSystemObjectService;
+    private StorageItemService storageItemService;
 
     @Autowired
-    private FileSystemObjectRepository fileSystemObjectRepository;
+    private StorageItemRepository storageItemRepository;
 
     @Autowired
     private MinioClient minioClient;

@@ -1,7 +1,6 @@
 package git.scathies.cloudfilestorage.service;
 
 import git.scathies.cloudfilestorage.model.User;
-import git.scathies.cloudfilestorage.repository.FileSystemObjectRepository;
 import git.scathies.cloudfilestorage.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,14 +16,14 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
-    private final FileSystemObjectRepository fileSystemObjectRepository;
+    private final StorageItemService storageItemService;
 
     @Override
     public void createUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
         user.setPassword(null);
-        fileSystemObjectRepository.saveRootFolder(user);
+        storageItemService.createRootFolder(user);
     }
 
     @Override
